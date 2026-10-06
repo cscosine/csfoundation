@@ -1,62 +1,47 @@
 {
   "csorchestrator_manifest": {
     "additional_files": [
-      "third_party_base_libs/csorchestrator_config.py"
+      "third_party_base_libs_config.py"
+    ],
+    "headers_only_packages": [
+      "magic_enum",
+      "tclap",
+      "eigen3",
+      "tl-expected",
+      "pipes",
+      "fmt-eigen",
+      "NamedType",
+      "tl-optional"
     ],
     "manifest_version": "1.0",
     "output_bundle_file_name": "third_party_base_libs-0.1.0-bundle.tar.gz",
+    "packages": [
+      "fmt",
+      "Catch2",
+      "cpptrace",
+      "csCMake",
+      "libassert"
+    ],
     "project_name": "third_party_base_libs",
     "project_version": "0.1.0",
     "variants": [
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu22.04-x64-generic-gcc-default-ninjamulticonfig"
@@ -64,52 +49,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu22.04-x64-generic-clang-default-ninjamulticonfig"
@@ -117,52 +70,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu22.04-arm64-generic-gcc-default-ninja"
@@ -170,52 +91,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu22.04-arm64-generic-clang-default-ninja"
@@ -223,52 +112,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu24.04-x64-generic-gcc-default-ninjamulticonfig"
@@ -276,52 +133,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu24.04-x64-generic-clang-default-ninjamulticonfig"
@@ -329,52 +154,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu24.04-arm64-generic-gcc-default-ninja"
@@ -382,52 +175,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-linux-ubuntu24.04-arm64-generic-clang-default-ninja"
@@ -435,52 +196,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-windows-v10-x64-generic-msvc-default-msvc2022"
@@ -488,52 +217,20 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
-          },
-          {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
         "variant": "csv1-windows-v10-x64-generic-msvc-default-msvc2026"
@@ -541,55 +238,44 @@
       {
         "entries": [
           {
-            "name": "eigen3",
-            "version": "3.4.0"
-          },
-          {
             "name": "fmt",
             "version": "11.2.1"
-          },
-          {
-            "name": "fmt-eigen",
-            "version": "1.0.0"
           },
           {
             "name": "cpptrace",
             "version": "0.8.3"
           },
           {
-            "name": "magic_enum",
-            "version": "0.9.7"
+            "name": "libassert",
+            "version": "2.1.5"
+          },
+          {
+            "name": "Catch2",
+            "version": "3.10.0"
+          }
+        ],
+        "variant": "csv1-windows-v10-x64-generic-msvcclang-default-msvc2022"
+      },
+      {
+        "entries": [
+          {
+            "name": "fmt",
+            "version": "11.2.1"
+          },
+          {
+            "name": "cpptrace",
+            "version": "0.8.3"
           },
           {
             "name": "libassert",
             "version": "2.1.5"
           },
           {
-            "name": "tclap",
-            "version": "1.0.0"
-          },
-          {
             "name": "Catch2",
             "version": "3.10.0"
-          },
-          {
-            "name": "pipes",
-            "version": "0.0.1"
-          },
-          {
-            "name": "NamedType",
-            "version": "1.1.0"
-          },
-          {
-            "name": "tl-optional",
-            "version": "1.0.0"
-          },
-          {
-            "name": "tl-expected",
-            "version": "1.2.0"
           }
         ],
-        "variant": "csv1-windows-v10-x64-generic-msvcclang-default-msvc2022"
+        "variant": "csv1-windows-v10-x64-generic-msvcclang-default-msvc2026"
       },
       {
         "entries": [
@@ -598,32 +284,16 @@
             "version": "3.4.0"
           },
           {
-            "name": "fmt",
-            "version": "11.2.1"
-          },
-          {
             "name": "fmt-eigen",
             "version": "1.0.0"
-          },
-          {
-            "name": "cpptrace",
-            "version": "0.8.3"
           },
           {
             "name": "magic_enum",
             "version": "0.9.7"
           },
           {
-            "name": "libassert",
-            "version": "2.1.5"
-          },
-          {
             "name": "tclap",
             "version": "1.0.0"
-          },
-          {
-            "name": "Catch2",
-            "version": "3.10.0"
           },
           {
             "name": "pipes",
@@ -642,7 +312,44 @@
             "version": "1.2.0"
           }
         ],
-        "variant": "csv1-windows-v10-x64-generic-msvcclang-default-msvc2026"
+        "variant": "csv1-linux"
+      },
+      {
+        "entries": [
+          {
+            "name": "eigen3",
+            "version": "3.4.0"
+          },
+          {
+            "name": "fmt-eigen",
+            "version": "1.0.0"
+          },
+          {
+            "name": "magic_enum",
+            "version": "0.9.7"
+          },
+          {
+            "name": "tclap",
+            "version": "1.0.0"
+          },
+          {
+            "name": "pipes",
+            "version": "0.0.1"
+          },
+          {
+            "name": "NamedType",
+            "version": "1.1.0"
+          },
+          {
+            "name": "tl-optional",
+            "version": "1.0.0"
+          },
+          {
+            "name": "tl-expected",
+            "version": "1.2.0"
+          }
+        ],
+        "variant": "csv1-windows"
       }
     ]
   }

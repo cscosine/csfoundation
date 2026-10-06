@@ -37,27 +37,36 @@ jobs:
         from typing import cast
 
         from csorchestratorsdk.portable.release_manifest import (
+            PublishPackageMode,  # noqa: F401 keep even if locally unused, necessary after variable subst
+            ReposPublishConfigDict,
             collect_release_manifest_single_variant_and_prepare_manifest,
         )
 
+        input_folder_base = Path('.')
         input_manifest_path_variant = [(Path('csfoundation-0.1.0-csv1-linux-ubuntu22.04-x64-generic-gcc-default-ninjamulticonfig/csfoundation-0.1.0-csv1-linux-ubuntu22.04-x64-generic-gcc-default-ninjamulticonfig.csOrchestratorManifest'), 'csv1-linux-ubuntu22.04-x64-generic-gcc-default-ninjamulticonfig'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu22.04-x64-generic-clang-default-ninjamulticonfig/csfoundation-0.1.0-csv1-linux-ubuntu22.04-x64-generic-clang-default-ninjamulticonfig.csOrchestratorManifest'), 'csv1-linux-ubuntu22.04-x64-generic-clang-default-ninjamulticonfig'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu22.04-arm64-generic-gcc-default-ninja/csfoundation-0.1.0-csv1-linux-ubuntu22.04-arm64-generic-gcc-default-ninja.csOrchestratorManifest'), 'csv1-linux-ubuntu22.04-arm64-generic-gcc-default-ninja'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu22.04-arm64-generic-clang-default-ninja/csfoundation-0.1.0-csv1-linux-ubuntu22.04-arm64-generic-clang-default-ninja.csOrchestratorManifest'), 'csv1-linux-ubuntu22.04-arm64-generic-clang-default-ninja'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu24.04-x64-generic-gcc-default-ninjamulticonfig/csfoundation-0.1.0-csv1-linux-ubuntu24.04-x64-generic-gcc-default-ninjamulticonfig.csOrchestratorManifest'), 'csv1-linux-ubuntu24.04-x64-generic-gcc-default-ninjamulticonfig'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu24.04-x64-generic-clang-default-ninjamulticonfig/csfoundation-0.1.0-csv1-linux-ubuntu24.04-x64-generic-clang-default-ninjamulticonfig.csOrchestratorManifest'), 'csv1-linux-ubuntu24.04-x64-generic-clang-default-ninjamulticonfig'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu24.04-arm64-generic-gcc-default-ninja/csfoundation-0.1.0-csv1-linux-ubuntu24.04-arm64-generic-gcc-default-ninja.csOrchestratorManifest'), 'csv1-linux-ubuntu24.04-arm64-generic-gcc-default-ninja'), (Path('csfoundation-0.1.0-csv1-linux-ubuntu24.04-arm64-generic-clang-default-ninja/csfoundation-0.1.0-csv1-linux-ubuntu24.04-arm64-generic-clang-default-ninja.csOrchestratorManifest'), 'csv1-linux-ubuntu24.04-arm64-generic-clang-default-ninja'), (Path('csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvc-default-msvc2022/csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvc-default-msvc2022.csOrchestratorManifest'), 'csv1-windows-v10-x64-generic-msvc-default-msvc2022'), (Path('csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvc-default-msvc2026/csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvc-default-msvc2026.csOrchestratorManifest'), 'csv1-windows-v10-x64-generic-msvc-default-msvc2026'), (Path('csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvcclang-default-msvc2022/csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvcclang-default-msvc2022.csOrchestratorManifest'), 'csv1-windows-v10-x64-generic-msvcclang-default-msvc2022'), (Path('csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvcclang-default-msvc2026/csfoundation-0.1.0-csv1-windows-v10-x64-generic-msvcclang-default-msvc2026.csOrchestratorManifest'), 'csv1-windows-v10-x64-generic-msvcclang-default-msvc2026')]
-        output_filepath = Path('csfoundation-0.1.0.csOrchestratorManifest')
+        output_manifest_filename = Path('csfoundation-0.1.0.csOrchestratorManifest')
         project_name = 'csfoundation'
         project_version = '0.1.0'
         base_path_additional_files = Path(os.environ["GITHUB_WORKSPACE"])
         list_additional_files = [Path('csfoundation/csorchestrator_config.py')]
-        output_folder_additional_files = Path('.')
+        output_folder_additional_files = Path('generated-for-release')
         output_bundle_file_name = Path('csfoundation-0.1.0-bundle.tar.gz')
+        repo_publish_config_dict = {}
+        header_only_variants_sources = {'csv1-linux': 'csv1-linux-ubuntu22.04-x64-generic-gcc-default-ninjamulticonfig', 'csv1-windows': 'csv1-windows-v10-x64-generic-msvc-default-msvc2022'}
 
         errors_list = collect_release_manifest_single_variant_and_prepare_manifest(
+            input_folder_base=input_folder_base,
             input_manifest_path_variant=input_manifest_path_variant,
-            output_filepath=output_filepath,
+            output_manifest_filename=output_manifest_filename,
             project_name=project_name,
             project_version=project_version,
             base_path_additional_files=base_path_additional_files,
             list_additional_files=list_additional_files,
             output_folder_additional_files=output_folder_additional_files,
             output_bundle_file_name=output_bundle_file_name,
+            repo_publish_config_dict=repo_publish_config_dict,
+            header_only_variants_sources=header_only_variants_sources,
+            archive_files_are_in_context_based_folder=True,
         )
 
         if len(errors_list) > 0:
@@ -71,22 +80,24 @@ jobs:
     - name: Upload manifest as artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: manifest.csOrchestratorManifest
+        name: csfoundation-0.1.0.csOrchestratorManifest
         path: |-
-          artifacts/**/*.csOrchestratorManifest
+          artifacts/generated-for-release/csfoundation-0.1.0.csOrchestratorManifest
+        overwrite: true
     - name: Upload additional file csfoundation-0.1.0-bundle.tar.gz as artifact
       uses: actions/upload-artifact@v7
       with:
         name: csfoundation-0.1.0-bundle.tar.gz
         path: |-
-          artifacts/csfoundation-0.1.0-bundle.tar.gz
+          artifacts/generated-for-release/csfoundation-0.1.0-bundle.tar.gz
+        overwrite: true
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v3
       with:
         files: |-
           artifacts/**/*.tar.gz
-          artifacts/**/*.csOrchestratorManifest
-          artifacts/csfoundation-0.1.0-bundle.tar.gz
+          artifacts/generated-for-release/csfoundation-0.1.0.csOrchestratorManifest
+          artifacts/generated-for-release/csfoundation-0.1.0-bundle.tar.gz
       if: ${{ github.ref_type == 'tag' }}
   orchestrator-matrix:
     runs-on: ${{ matrix.runner }}
@@ -319,7 +330,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-Catch2-3.10.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib Catch2 extract tar.gz
@@ -331,7 +342,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-NamedType-1.1.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib NamedType extract tar.gz
@@ -343,7 +354,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-cpptrace-0.8.3-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib cpptrace extract tar.gz
@@ -355,7 +366,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-eigen3-3.4.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib eigen3 extract tar.gz
@@ -367,7 +378,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-fmt-11.2.1-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib fmt extract tar.gz
@@ -379,7 +390,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-fmt-eigen-1.0.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib fmt-eigen extract tar.gz
@@ -391,7 +402,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-libassert-2.1.5-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib libassert extract tar.gz
@@ -403,7 +414,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-pipes-0.0.1-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib pipes extract tar.gz
@@ -415,7 +426,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-tl-expected-1.2.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib tl-expected extract tar.gz
@@ -427,7 +438,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/third_party_base_libs
-        tag: v0.1.0
+        tag: v0.1.0-rc1
         fileName: third_party_base_libs-0.1.0-tl-optional-1.0.0-csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}.tar.gz
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib tl-optional extract tar.gz
@@ -478,7 +489,7 @@ jobs:
       uses: robinraju/release-downloader@v1.13
       with:
         repository: cscosine/csqt6
-        tag: v6.11.1
+        tag: v6.11.1-rc1
         fileName: ${{ steps.filename_csqt6_qt6.outputs.filename_csqt6_qt6 }}
         out-file-path: workspace/libs/csv1-${{ matrix.os }}-${{ matrix.os_version }}-${{ matrix.architecture }}-${{ matrix.architecture_variant }}-${{ matrix.compiler }}-${{ matrix.compiler_version }}-${{ matrix.generator }}
     - name: Get Precompiled Lib qt6 extract tar.gz
@@ -624,3 +635,4 @@ jobs:
         path: |-
           workspace/install/*.tar.gz
           workspace/install/*.csOrchestratorManifest
+        overwrite: true

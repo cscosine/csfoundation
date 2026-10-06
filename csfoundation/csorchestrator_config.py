@@ -15,12 +15,21 @@ installer, and two installation helpers:
   internal helper does and additionally downloads the requested prebuilt
   first-party libraries (``csCore``, ``csLie``, ...) from the ``csfoundation``
   GitHub release itself.
+
+Both helpers delegate to the installers of the consumed releases, which are
+downloaded into ``libs/`` and imported lazily (``_managed_library_config``):
+deleting ``libs/`` — or a part of it — is safe, it is re-downloaded on demand.
 """
 
+import importlib
 from pathlib import Path
+from typing import Any
 
 from csorchestrator.application.recipes.manifest_github import (
+    ManifestGithub,
     download_csorchestrator_managed_libraries,
+    download_manifest,
+    download_manifest_bundle,
     install_ubuntu_apt_packages,
     resolve_library_dependencies,
 )
@@ -30,16 +39,7 @@ from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     MappingFunction,
     StepGetPrecompiledLibGithub,
 )
-
-from libs.csqt6.csorchestrator_config import (
-    auto_install_csorchestrator_managed_libraries as auto_install_csqt6_libraries,
-)
-from libs.csqt6.csorchestrator_config import (
-    qt6_mapping,
-)
-from libs.third_party_base_libs.csorchestrator_config import (
-    auto_install_csorchestrator_managed_libraries as auto_install_third_party_base_libs_libraries,
-)
+from csorchestrator.portable.release_manifest import ReleaseManifest
 
 # ---------------------------------------------------------------------------
 # Single source of truth for the project identity.  ``csfoundation_project.py``
@@ -47,13 +47,74 @@ from libs.third_party_base_libs.csorchestrator_config import (
 # ---------------------------------------------------------------------------
 CSFOUNDATION_PROJECT_NAME: str = "csfoundation"
 CSFOUNDATION_PROJECT_VERSION: str = "0.1.0"
+CSFOUNDATION_RELEASE_TAG: str = "v" + CSFOUNDATION_PROJECT_VERSION
 
 # ---------------------------------------------------------------------------
 # Release tags of the consumed csorchestrator-managed dependency releases.
 # ---------------------------------------------------------------------------
-THIRD_PARTY_BASE_LIBS_RELEASE_TAG: str = "v0.1.0"
-CSQT6_RELEASE_TAG: str = "v6.11.1"
-CSFOUNDATION_RELEASE_TAG: str = "v" + CSFOUNDATION_PROJECT_VERSION
+THIRD_PARTY_BASE_LIBS_RELEASE_TAG: str = "v0.1.0-rc1"
+CSQT6_RELEASE_TAG: str = "v6.11.1-rc1"
+
+# ---------------------------------------------------------------------------
+# Releases consumed from GitHub: provider project name -> own release tag.
+# The installers of those releases ship inside their release bundle and are
+# downloaded into ``libs/<project>/`` by ``_managed_library_config``, which
+# imports them lazily so that a deleted ``libs/`` (or a part of it) is
+# re-downloaded instead of breaking this module's import.
+# ---------------------------------------------------------------------------
+MANAGED_LIBRARY_RELEASES: dict[str, str] = {
+    "third_party_base_libs": THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
+    "csqt6": CSQT6_RELEASE_TAG,
+}
+
+
+def _managed_library_config(project_name: str, report: Report | None = None) -> Any:
+    """Import ``libs/<project_name>/csorchestrator_config.py``, downloading it if missing.
+
+    That module ships inside the release bundle and is downloaded at run time, so it
+    is imported on first use: a deleted ``libs/`` (or a part of it) is re-downloaded
+    instead of breaking this module's import.  Only the manifest and the bundle are
+    fetched here, no orchestrator is involved.
+    """
+    module_name = f"libs.{project_name}.csorchestrator_config"
+    try:
+        return importlib.import_module(module_name)
+    except ModuleNotFoundError as e:
+        # bootstrap only when the missing module is the downloaded configuration
+        # itself (or one of its packages), not an import error inside of it
+        if e.name is None or not module_name.startswith(e.name):
+            raise
+
+    release_tag = MANAGED_LIBRARY_RELEASES[project_name]
+    manifest_description = ManifestGithub(
+        base_url=StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
+        org="cscosine",
+        git_repo=project_name,
+        project_name=project_name,
+        project_version=release_tag.removeprefix("v"),
+        release_tag=release_tag,
+    )
+
+    download_report = Report()
+    manifest = download_manifest(manifest_description, Path("libs") / "manifests")
+    download_report.append_report(manifest.report)
+    if manifest.result is not None:
+        download_report.append_report(
+            download_manifest_bundle(
+                manifest_description, ReleaseManifest.load_release_manifest(manifest.result), Path("libs")
+            )
+        )
+
+    if report is not None:
+        report.append_report(download_report)
+    if download_report.has_errors():
+        raise ModuleNotFoundError(
+            f"cannot download the '{project_name}' release {release_tag} configuration: {list(download_report.errors)}"
+        ) from None
+
+    importlib.invalidate_caches()
+    return importlib.import_module(module_name)
+
 
 # ---------------------------------------------------------------------------
 # First-party libraries of this project (built from source; ``csCMake`` is
@@ -215,7 +276,7 @@ def _download_managed_libraries(
     )
     if third_party_libs:
         report.append_report(
-            auto_install_third_party_base_libs_libraries(
+            _managed_library_config("third_party_base_libs", report).auto_install_csorchestrator_managed_libraries(
                 orchestrator=orchestrator,
                 release_tag=third_party_base_libs_release_tag,
                 base_libs_dir=base_libs_dir,
@@ -227,15 +288,18 @@ def _download_managed_libraries(
 
     qt6_libs = resolve_required_qt6_libraries(required_libs)
     if qt6_libs:
+        # the csqt6 release ships its own toolchain mapping (GCC/Ninja on Linux,
+        # MSVC 2022/Ninja on Windows): use it unless the caller overrides it
+        csqt6_config = _managed_library_config("csqt6", report)
         report.append_report(
-            auto_install_csqt6_libraries(
+            csqt6_config.auto_install_csorchestrator_managed_libraries(
                 orchestrator=orchestrator,
                 release_tag=qt6_release_tag,
                 base_libs_dir=base_libs_dir,
                 required_libs=qt6_libs,
                 org=org,
                 base_url=base_url,
-                mapping_function=qt6_mapping_function,
+                mapping_function=qt6_mapping_function or csqt6_config.qt6_mapping,
             )
         )
 
@@ -250,7 +314,7 @@ def install_csfoundation_build_dependencies(
     base_url: str = StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
     third_party_base_libs_release_tag: str = THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
     qt6_release_tag: str = CSQT6_RELEASE_TAG,
-    qt6_mapping_function: MappingFunction | None = qt6_mapping,
+    qt6_mapping_function: MappingFunction | None = None,
 ) -> Report:
     """Install system requirements and download the libraries needed to build.
 
@@ -263,9 +327,9 @@ def install_csfoundation_build_dependencies(
     because CI runs Configure-Build-Test-Install; internal transitive deps,
     e.g. ``cpptrace`` for ``libassert``, are auto-filled by the third-party
     helper itself), and downloads the ``csqt6`` subset resolved via
-    ``resolve_required_qt6_libraries`` with ``qt6_mapping_function`` (defaults
-    to ``qt6_mapping``: GCC/Ninja on Linux, MSVC 2022/Ninja on Windows; pass
-    ``None`` for csorchestrator's built-in selection behaviour).
+    ``resolve_required_qt6_libraries`` with ``qt6_mapping_function`` (``None``
+    means the mapping shipped by the ``csqt6`` release: GCC/Ninja on Linux,
+    MSVC 2022/Ninja on Windows).
 
     Returns a combined ``Report`` that the caller can append to their own
     report object.
@@ -292,7 +356,7 @@ def auto_install_csorchestrator_managed_libraries(
     third_party_base_libs_release_tag: str = THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
     qt6_release_tag: str = CSQT6_RELEASE_TAG,
     csfoundation_release_tag: str = CSFOUNDATION_RELEASE_TAG,
-    qt6_mapping_function: MappingFunction | None = qt6_mapping,
+    qt6_mapping_function: MappingFunction | None = None,
 ) -> Report:
     """Download prebuilt csfoundation libraries and everything they need.
 
