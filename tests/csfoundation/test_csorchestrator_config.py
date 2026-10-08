@@ -1,4 +1,4 @@
-from csfoudation_config import (
+from csfoundation_config import (
     FIRST_PARTY_LIBRARIES,
     FIRST_PARTY_LIBRARY_DEPENDENCIES,
     QT6_LIBRARY_DEPENDENCIES,

@@ -21,7 +21,7 @@ from csorchestrator.application.recipes.repos_config import (
 from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 
-from csfoudation_config import (
+from csfoundation_config import (
     CSFOUNDATION_PROJECT_NAME,
     CSFOUNDATION_PROJECT_VERSION,
     install_csfoundation_build_dependencies,
@@ -48,7 +48,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         name=CSFOUNDATION_PROJECT_NAME,
         version=CSFOUNDATION_PROJECT_VERSION,
         base_install_dir=base_install_dir,
-        additional_files_list=[Path("csfoundation/csorchestrator_config.py")],
+        additional_files_list=[Path("csfoundation_config.py")],
     )
 
     # ----------------------------------------------------------------
