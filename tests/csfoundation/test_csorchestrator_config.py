@@ -1,4 +1,4 @@
-from csfoundation.csorchestrator_config import (
+from csfoudation_config import (
     FIRST_PARTY_LIBRARIES,
     FIRST_PARTY_LIBRARY_DEPENDENCIES,
     QT6_LIBRARY_DEPENDENCIES,

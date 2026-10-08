@@ -21,7 +21,7 @@ from csorchestrator.application.recipes.repos_config import (
 from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 
-from csfoundation.csorchestrator_config import (
+from csfoudation_config import (
     CSFOUNDATION_PROJECT_NAME,
     CSFOUNDATION_PROJECT_VERSION,
     install_csfoundation_build_dependencies,

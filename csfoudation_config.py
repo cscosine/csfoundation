@@ -52,8 +52,11 @@ CSFOUNDATION_RELEASE_TAG: str = "v" + CSFOUNDATION_PROJECT_VERSION
 # ---------------------------------------------------------------------------
 # Release tags of the consumed csorchestrator-managed dependency releases.
 # ---------------------------------------------------------------------------
-THIRD_PARTY_BASE_LIBS_RELEASE_TAG: str = "v0.1.0-rc1"
-CSQT6_RELEASE_TAG: str = "v6.11.1-rc1"
+THIRD_PARTY_BASE_LIBS_VERSION: str = "0.1.0"
+THIRD_PARTY_BASE_LIBS_RELEASE_TAG: str = "v" + THIRD_PARTY_BASE_LIBS_VERSION + "-rc1"
+
+CSQT6_RELEASE_VERSION: str = "6.11.1"
+CSQT6_RELEASE_TAG: str = "v" + CSQT6_RELEASE_VERSION + "-rc1"
 
 # ---------------------------------------------------------------------------
 # Releases consumed from GitHub: provider project name -> own release tag.
@@ -62,9 +65,9 @@ CSQT6_RELEASE_TAG: str = "v6.11.1-rc1"
 # imports them lazily so that a deleted ``libs/`` (or a part of it) is
 # re-downloaded instead of breaking this module's import.
 # ---------------------------------------------------------------------------
-MANAGED_LIBRARY_RELEASES: dict[str, str] = {
-    "third_party_base_libs": THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
-    "csqt6": CSQT6_RELEASE_TAG,
+MANAGED_LIBRARY_VERSION_RELEASE_TAG: dict[str, tuple[str, str]] = {
+    "third_party_base_libs": (THIRD_PARTY_BASE_LIBS_VERSION, THIRD_PARTY_BASE_LIBS_RELEASE_TAG),
+    "csqt6": (CSQT6_RELEASE_VERSION, CSQT6_RELEASE_TAG),
 }
 
 
@@ -76,7 +79,7 @@ def _managed_library_config(project_name: str, report: Report | None = None) -> 
     instead of breaking this module's import.  Only the manifest and the bundle are
     fetched here, no orchestrator is involved.
     """
-    module_name = f"libs.{project_name}.csorchestrator_config"
+    module_name = f"libs.{project_name}_config"
     try:
         return importlib.import_module(module_name)
     except ModuleNotFoundError as e:
@@ -85,13 +88,13 @@ def _managed_library_config(project_name: str, report: Report | None = None) -> 
         if e.name is None or not module_name.startswith(e.name):
             raise
 
-    release_tag = MANAGED_LIBRARY_RELEASES[project_name]
+    (version, release_tag) = MANAGED_LIBRARY_VERSION_RELEASE_TAG[project_name]
     manifest_description = ManifestGithub(
         base_url=StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
         org="cscosine",
         git_repo=project_name,
         project_name=project_name,
-        project_version=release_tag.removeprefix("v"),
+        project_version=version,
         release_tag=release_tag,
     )
 
