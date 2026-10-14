@@ -1,184 +1,112 @@
-"""csorchestrator configuration for csfoundation.
-
-This module defines the authoritative project name and version as single
-sources of truth, the first-party libraries of the project together with
-their (cross-repo) managed dependencies, the Linux system requirements
-installer, and two installation helpers:
-
-* ``install_csfoundation_build_dependencies`` — internal use (the CI recipe in
-  ``csfoundation_project.py``): installs the system requirements and downloads
-  the manifest, the bundles, and only the required (pre-)compiled libraries
-  from the ``third_party_base_libs`` and ``csqt6`` GitHub releases that are
-  needed to *build* csfoundation from source.
-* ``auto_install_csorchestrator_managed_libraries`` — customer-facing helper,
-  deployed to the release via ``additional_files_list``: does everything the
-  internal helper does and additionally downloads the requested prebuilt
-  first-party libraries (``csCore``, ``csLie``, ...) from the ``csfoundation``
-  GitHub release itself.
-
-Both helpers delegate to the installers of the consumed releases, which are
-downloaded into ``libs/`` and imported lazily (``_managed_library_config``):
-deleting ``libs/`` — or a part of it — is safe, it is re-downloaded on demand.
-"""
-
 import importlib
 from pathlib import Path
-from typing import Any
 
 from csorchestrator.application.recipes.manifest_github import (
+    ExternalLibraryDependenciesMap,
+    LibraryDependenciesMap,
+    LibraryList,
     ManifestGithub,
-    download_csorchestrator_managed_libraries,
-    download_manifest,
-    download_manifest_bundle,
+    ProviderList,
+    extract_provider_libs_list,
+    extract_provider_names,
+    fill_in_libraries_in_dependecies,
+    fill_in_library_list,
+    fill_in_providers_and_libs_in_dependencies,
     install_ubuntu_apt_packages,
+    merge_library_dependencies,
+    merge_providers_dependencies,
     resolve_library_dependencies,
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
-    MappingFunction,
     StepGetPrecompiledLibGithub,
 )
 from csorchestrator.portable.release_manifest import ReleaseManifest
 
-# ---------------------------------------------------------------------------
-# Single source of truth for the project identity.  ``csfoundation_project.py``
-# imports these constants so there is exactly one place to update on release.
-# ---------------------------------------------------------------------------
 CSFOUNDATION_PROJECT_NAME: str = "csfoundation"
 CSFOUNDATION_PROJECT_VERSION: str = "0.1.0"
-CSFOUNDATION_RELEASE_TAG: str = "v" + CSFOUNDATION_PROJECT_VERSION
 
-# ---------------------------------------------------------------------------
-# Release tags of the consumed csorchestrator-managed dependency releases.
-# ---------------------------------------------------------------------------
-THIRD_PARTY_BASE_LIBS_VERSION: str = "0.1.0"
-THIRD_PARTY_BASE_LIBS_RELEASE_TAG: str = "v" + THIRD_PARTY_BASE_LIBS_VERSION + "-rc1"
+LIBRARY_LIST: LibraryList = ["csCore", "csLie", "csCamera", "csVisOpenGL"]
 
-CSQT6_RELEASE_VERSION: str = "6.11.1"
-CSQT6_RELEASE_TAG: str = "v" + CSQT6_RELEASE_VERSION + "-rc1"
-
-# ---------------------------------------------------------------------------
-# Releases consumed from GitHub: provider project name -> own release tag.
-# The installers of those releases ship inside their release bundle and are
-# downloaded into ``libs/<project>/`` by ``_managed_library_config``, which
-# imports them lazily so that a deleted ``libs/`` (or a part of it) is
-# re-downloaded instead of breaking this module's import.
-# ---------------------------------------------------------------------------
-MANAGED_LIBRARY_VERSION_RELEASE_TAG: dict[str, tuple[str, str]] = {
-    "third_party_base_libs": (THIRD_PARTY_BASE_LIBS_VERSION, THIRD_PARTY_BASE_LIBS_RELEASE_TAG),
-    "csqt6": (CSQT6_RELEASE_VERSION, CSQT6_RELEASE_TAG),
-}
-
-
-def _managed_library_config(project_name: str, report: Report | None = None) -> Any:
-    """Import ``libs/<project_name>/csorchestrator_config.py``, downloading it if missing.
-
-    That module ships inside the release bundle and is downloaded at run time, so it
-    is imported on first use: a deleted ``libs/`` (or a part of it) is re-downloaded
-    instead of breaking this module's import.  Only the manifest and the bundle are
-    fetched here, no orchestrator is involved.
-    """
-    module_name = f"libs.{project_name}_config"
-    try:
-        return importlib.import_module(module_name)
-    except ModuleNotFoundError as e:
-        # bootstrap only when the missing module is the downloaded configuration
-        # itself (or one of its packages), not an import error inside of it
-        if e.name is None or not module_name.startswith(e.name):
-            raise
-
-    (version, release_tag) = MANAGED_LIBRARY_VERSION_RELEASE_TAG[project_name]
-    manifest_description = ManifestGithub(
-        base_url=StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
-        org="cscosine",
-        git_repo=project_name,
-        project_name=project_name,
-        project_version=version,
-        release_tag=release_tag,
-    )
-
-    download_report = Report()
-    manifest = download_manifest(manifest_description, Path("libs") / "manifests")
-    download_report.append_report(manifest.report)
-    if manifest.result is not None:
-        download_report.append_report(
-            download_manifest_bundle(
-                manifest_description, ReleaseManifest.load_release_manifest(manifest.result), Path("libs")
-            )
-        )
-
-    if report is not None:
-        report.append_report(download_report)
-    if download_report.has_errors():
-        raise ModuleNotFoundError(
-            f"cannot download the '{project_name}' release {release_tag} configuration: {list(download_report.errors)}"
-        ) from None
-
-    importlib.invalidate_caches()
-    return importlib.import_module(module_name)
-
-
-# ---------------------------------------------------------------------------
-# First-party libraries of this project (built from source; ``csCMake`` is
-# checkout-only build tooling and intentionally not listed here) and their
-# managed dependencies, derived from the "Library Dependency Graph" section of
-# README.md.
-#
-# Dependencies are kept in one map per providing release so that each
-# installer talks to exactly one release without ``if lib == "qt6"`` style
-# filtering:
-# * ``FIRST_PARTY_LIBRARY_DEPENDENCIES`` — internal edges between first-party
-#   libraries (e.g. ``csLie -> csCore``); used to expand a request to its
-#   transitive closure before per-release resolution.
-# * ``THIRD_PARTY_LIBRARY_DEPENDENCIES`` — managed libraries provided by the
-#   ``third_party_base_libs`` release, as needed by downstream customers
-#   (test-only dependencies excluded).
-# * ``THIRD_PARTY_TEST_LIBRARY_DEPENDENCIES`` — extra ``third_party_base_libs``
-#   entries needed only to build & run this repo's own tests (the CI phase
-#   runs Configure-Build-Test-Install). Merged in only when
-#   ``include_test_dependencies=True``.
-# * ``QT6_LIBRARY_DEPENDENCIES`` — managed libraries provided by the ``csqt6``
-#   release (only ``csVisOpenGL`` needs ``qt6``).
-#
-# Transitive dependencies *internal* to a dependency release (e.g. cpptrace
-# pulled in by libassert) are not repeated: they are auto-filled by the
-# dependency project's own helper.
-# ---------------------------------------------------------------------------
-FIRST_PARTY_LIBRARIES: list[str] = [
-    "csCore",
-    "csLie",
-    "csCamera",
-    "csVisOpenGL",
-]
-
-FIRST_PARTY_LIBRARY_DEPENDENCIES: dict[str, list[str]] = {
+# project internal dependencies
+LIBRARY_DEPENDENCIES: LibraryDependenciesMap = {
     "csCore": [],
     "csLie": ["csCore"],
     "csCamera": ["csCore"],
     "csVisOpenGL": ["csCore"],
 }
 
-THIRD_PARTY_LIBRARY_DEPENDENCIES: dict[str, list[str]] = {
-    "csCore": ["eigen3", "fmt", "fmt-eigen", "libassert", "pipes", "NamedType", "tl-expected", "tl-optional"],
-    "csLie": ["eigen3"],
-    "csCamera": ["eigen3"],
-    "csVisOpenGL": ["eigen3"],
+# project additional dependencies for `dev`
+LIBRARY_DEPENDENCIES_DEV: LibraryDependenciesMap = {
+    "csCore": [],
+    "csLie": [],
+    "csCamera": [],
+    "csVisOpenGL": [],
 }
 
-THIRD_PARTY_TEST_LIBRARY_DEPENDENCIES: dict[str, list[str]] = {
-    # Catch2 is test-only: required to build & run this repo's own tests
-    # (Configure-Build-Test-Install), never by downstream customers.
-    # csVisOpenGL ships no tests yet, but Catch2 is listed pre-emptively
-    # so the entry exists when tests are added.
-    "csCore": ["Catch2"],
-    "csLie": ["Catch2"],
-    "csCamera": ["Catch2"],
-    "csVisOpenGL": ["Catch2"],
+# external providers
+THIRD_PARTY_BASE_LIBS_PROVIDER = ManifestGithub(
+    base_url=StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
+    org="cscosine",
+    git_repo="third_party_base_libs",
+    project_name="third_party_base_libs",
+    project_version="0.1.0",
+    release_tag="v0.1.0-rc1",
+)
+
+CSQT6_PROVIDER = ManifestGithub(
+    base_url=StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
+    org="cscosine",
+    git_repo="csqt6",
+    project_name="csqt6",
+    project_version="6.11.1",
+    release_tag="v6.11.1-rc1",
+)
+
+EXTERNAL_PROVIDERS: ProviderList = [
+    THIRD_PARTY_BASE_LIBS_PROVIDER,
+    CSQT6_PROVIDER,
+]
+
+# we should not need this...
+EXTERNAL_PROVIDERS_MAP: dict[str, ManifestGithub] = {
+    THIRD_PARTY_BASE_LIBS_PROVIDER.project_name: THIRD_PARTY_BASE_LIBS_PROVIDER,
+    CSQT6_PROVIDER.project_name: CSQT6_PROVIDER,
 }
 
-QT6_LIBRARY_DEPENDENCIES: dict[str, list[str]] = {
-    "csVisOpenGL": ["qt6"],
+EXTERNAL_DEPENDENCIES: ExternalLibraryDependenciesMap = {
+    # provider third_party_base_libs
+    THIRD_PARTY_BASE_LIBS_PROVIDER.project_name: {
+        "csCore": ["eigen3", "fmt", "fmt-eigen", "libassert", "pipes", "NamedType", "tl-expected", "tl-optional"],
+        "csLie": ["eigen3"],
+        "csCamera": ["eigen3"],
+        "csVisOpenGL": ["eigen3"],
+    },
+    # provider qt6
+    CSQT6_PROVIDER.project_name: {
+        "csCore": [],
+        "csLie": [],
+        "csCamera": [],
+        "csVisOpenGL": ["qt6"],
+    },
+}
+
+EXTERNAL_DEPENDENCIES_DEV: ExternalLibraryDependenciesMap = {
+    # provider third_party_base_libs
+    THIRD_PARTY_BASE_LIBS_PROVIDER.project_name: {
+        "csCore": ["Catch2"],
+        "csLie": ["Catch2"],
+        "csCamera": ["Catch2"],
+        "csVisOpenGL": ["Catch2"],
+    },
+    # provider qt6
+    CSQT6_PROVIDER.project_name: {
+        "csCore": [],
+        "csLie": [],
+        "csCamera": [],
+        "csVisOpenGL": [],
+    },
 }
 
 
@@ -192,7 +120,10 @@ def install_requirements(
     are installed only when it is in ``lib_list`` (``None`` means all
     libraries).
     """
-    if lib_list is None or "csVisOpenGL" in lib_list:
+
+    lib_list = fill_in_library_list(lib_list, LIBRARY_LIST)
+
+    if "csVisOpenGL" in lib_list:
         install_ubuntu_apt_packages(
             orchestrator,
             [
@@ -203,206 +134,75 @@ def install_requirements(
         )
 
 
-def _resolve_first_party_closure(
-    required_libs: list[str] | None = None,
-) -> list[str]:
-    """Expand the requested first-party libraries over first-party edges.
-
-    ``csCMake`` is checkout-only build tooling: it is dropped from explicit
-    requests (it has no entry in ``FIRST_PARTY_LIBRARY_DEPENDENCIES``), and
-    ``None`` means all built libraries.
-    """
-    if required_libs is None:
-        requested = list(FIRST_PARTY_LIBRARY_DEPENDENCIES)
-    else:
-        requested = [lib for lib in required_libs if lib in FIRST_PARTY_LIBRARY_DEPENDENCIES]
-    return resolve_library_dependencies(requested, FIRST_PARTY_LIBRARY_DEPENDENCIES) or []
-
-
-def resolve_required_third_party_libraries(
-    required_libs: list[str] | None = None,
-    include_test_dependencies: bool = False,
-) -> list[str]:
-    """Resolve the ``third_party_base_libs`` libraries for the request.
-
-    ``required_libs`` lists the first-party libraries being consumed (``None``
-    means all of them). The request is first expanded over the first-party
-    edges (e.g. ``csLie -> csCore``) and then over
-    ``THIRD_PARTY_LIBRARY_DEPENDENCIES`` (plus
-    ``THIRD_PARTY_TEST_LIBRARY_DEPENDENCIES`` when
-    ``include_test_dependencies`` is ``True``). Returns only downloadable
-    managed libraries (``csCMake`` build tooling never resolves to anything).
-    """
-    closure = _resolve_first_party_closure(required_libs)
-    third_party_map: dict[str, list[str]]
-    if include_test_dependencies:
-        third_party_map = {
-            lib: THIRD_PARTY_LIBRARY_DEPENDENCIES.get(lib, []) + THIRD_PARTY_TEST_LIBRARY_DEPENDENCIES.get(lib, [])
-            for lib in FIRST_PARTY_LIBRARIES
-        }
-    else:
-        third_party_map = THIRD_PARTY_LIBRARY_DEPENDENCIES
-    expanded = resolve_library_dependencies(closure, third_party_map) or []
-    return [lib for lib in expanded if lib not in FIRST_PARTY_LIBRARIES]
-
-
-def resolve_required_qt6_libraries(
-    required_libs: list[str] | None = None,
-) -> list[str]:
-    """Resolve the ``csqt6`` libraries for the request (``qt6`` iff needed)."""
-    closure = _resolve_first_party_closure(required_libs)
-    expanded = resolve_library_dependencies(closure, QT6_LIBRARY_DEPENDENCIES) or []
-    return [lib for lib in expanded if lib not in FIRST_PARTY_LIBRARIES]
-
-
-def _download_managed_libraries(
-    orchestrator: Orchestrator,
-    base_libs_dir: Path,
-    required_libs: list[str] | None,
-    org: str,
-    base_url: str,
-    third_party_base_libs_release_tag: str,
-    qt6_release_tag: str,
-    qt6_mapping_function: MappingFunction | None,
-    include_test_dependencies: bool,
-) -> Report:
-    """Shared core: system requirements plus the per-release managed downloads."""
-    report = Report()
-
-    # Linux system requirements follow the first-party request (e.g. the
-    # OpenGL packages are only needed when csVisOpenGL is being built).
-    install_requirements(orchestrator, lib_list=required_libs)
-
-    # Each release gets its own resolved list: no ``if lib == "qt6"`` filtering.
-    third_party_libs = resolve_required_third_party_libraries(
-        required_libs, include_test_dependencies=include_test_dependencies
-    )
-    if third_party_libs:
-        report.append_report(
-            _managed_library_config("third_party_base_libs", report).auto_install_csorchestrator_managed_libraries(
-                orchestrator=orchestrator,
-                release_tag=third_party_base_libs_release_tag,
-                base_libs_dir=base_libs_dir,
-                required_libs=third_party_libs,
-                org=org,
-                base_url=base_url,
-            )
-        )
-
-    qt6_libs = resolve_required_qt6_libraries(required_libs)
-    if qt6_libs:
-        # the csqt6 release ships its own toolchain mapping (GCC/Ninja on Linux,
-        # MSVC 2022/Ninja on Windows): use it unless the caller overrides it
-        csqt6_config = _managed_library_config("csqt6", report)
-        report.append_report(
-            csqt6_config.auto_install_csorchestrator_managed_libraries(
-                orchestrator=orchestrator,
-                release_tag=qt6_release_tag,
-                base_libs_dir=base_libs_dir,
-                required_libs=qt6_libs,
-                org=org,
-                base_url=base_url,
-                mapping_function=qt6_mapping_function or csqt6_config.qt6_mapping,
-            )
-        )
-
-    return report
-
-
 def install_csfoundation_build_dependencies(
     orchestrator: Orchestrator,
     base_libs_dir: Path,
+    dependencies_config_path: str,
+    dev: bool,
     required_libs: list[str] | None = None,
-    org: str = "cscosine",
-    base_url: str = StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
-    third_party_base_libs_release_tag: str = THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
-    qt6_release_tag: str = CSQT6_RELEASE_TAG,
-    qt6_mapping_function: MappingFunction | None = None,
 ) -> Report:
-    """Install system requirements and download the libraries needed to build.
 
-    Internal helper used by the CI recipe in ``csfoundation_project.py`` (it
-    builds csfoundation from source, so it never downloads csfoundation
-    itself). Given ``required_libs`` — the first-party libraries being built
-    (``None`` means all of them) — it installs the Linux system requirements,
-    downloads the ``third_party_base_libs`` subset resolved via
-    ``resolve_required_third_party_libraries`` (test dependencies included,
-    because CI runs Configure-Build-Test-Install; internal transitive deps,
-    e.g. ``cpptrace`` for ``libassert``, are auto-filled by the third-party
-    helper itself), and downloads the ``csqt6`` subset resolved via
-    ``resolve_required_qt6_libraries`` with ``qt6_mapping_function`` (``None``
-    means the mapping shipped by the ``csqt6`` release: GCC/Ninja on Linux,
-    MSVC 2022/Ninja on Windows).
+    report = Report()
 
-    Returns a combined ``Report`` that the caller can append to their own
-    report object.
-    """
-    return _download_managed_libraries(
-        orchestrator=orchestrator,
-        base_libs_dir=base_libs_dir,
-        required_libs=required_libs,
-        org=org,
-        base_url=base_url,
-        third_party_base_libs_release_tag=third_party_base_libs_release_tag,
-        qt6_release_tag=qt6_release_tag,
-        qt6_mapping_function=qt6_mapping_function,
-        include_test_dependencies=True,
+    # the packages we need to install
+    # TODO add this back when ready
+    # install_requirements(orchestrator, required_libs)
+
+    # the library requested
+    required_libs = fill_in_library_list(required_libs, LIBRARY_LIST)
+
+    # the library self dependencies
+    libs_self_dependencies = fill_in_libraries_in_dependecies(LIBRARY_DEPENDENCIES, LIBRARY_LIST)
+    if dev:
+        # extend them if we are in dev mode
+        libs_self_dependencies = merge_library_dependencies(
+            fill_in_libraries_in_dependecies(LIBRARY_DEPENDENCIES, LIBRARY_LIST),
+            fill_in_libraries_in_dependecies(LIBRARY_DEPENDENCIES_DEV, LIBRARY_LIST),
+        )
+
+    # the library effectively requested, after resolving dependencies
+    required_libs = resolve_library_dependencies(required_libs, libs_self_dependencies)
+
+    # the indirect dependencies
+    libs_external_dependencies = fill_in_providers_and_libs_in_dependencies(
+        EXTERNAL_DEPENDENCIES, extract_provider_names(EXTERNAL_PROVIDERS), LIBRARY_LIST
     )
+    if dev:
+        libs_external_dependencies_dev = fill_in_providers_and_libs_in_dependencies(
+            EXTERNAL_DEPENDENCIES_DEV, extract_provider_names(EXTERNAL_PROVIDERS), LIBRARY_LIST
+        )
+        libs_external_dependencies = merge_providers_dependencies(
+            libs_external_dependencies, libs_external_dependencies_dev
+        )
 
+    # TODO: download the manifest and the bundle, can be done separately
 
-def auto_install_csorchestrator_managed_libraries(
-    orchestrator: Orchestrator,
-    base_libs_dir: Path,
-    required_libs: list[str] | None = None,
-    org: str = "cscosine",
-    base_url: str = StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
-    third_party_base_libs_release_tag: str = THIRD_PARTY_BASE_LIBS_RELEASE_TAG,
-    qt6_release_tag: str = CSQT6_RELEASE_TAG,
-    csfoundation_release_tag: str = CSFOUNDATION_RELEASE_TAG,
-    qt6_mapping_function: MappingFunction | None = None,
-) -> Report:
-    """Download prebuilt csfoundation libraries and everything they need.
+    # for each provider, load the module it provides and run its autoinstall
+    provider_libs_list = extract_provider_libs_list(libs_external_dependencies)
 
-    Customer-facing helper, deployed to the release via
-    ``additional_files_list``. Given ``required_libs`` — the first-party
-    libraries being consumed (``None`` means all of them) — it installs the
-    build dependencies (system requirements plus the ``third_party_base_libs``
-    / ``csqt6`` managed libraries, test-only Catch2 never included) via
-    ``install_csfoundation_build_dependencies`` and then downloads the
-    requested prebuilt first-party libraries (``csCore``, ``csLie``, ...)
-    from the ``csfoundation`` GitHub release itself, so downstream projects
-    consume binaries instead of building from source.
+    for provider, libs in provider_libs_list.items():
+        module_name = f"{dependencies_config_path}.{provider}_config"
 
-    Returns a combined ``Report`` that the caller can append to their own
-    report object.
-    """
-    report = _download_managed_libraries(
-        orchestrator=orchestrator,
-        base_libs_dir=base_libs_dir,
-        required_libs=required_libs,
-        org=org,
-        base_url=base_url,
-        third_party_base_libs_release_tag=third_party_base_libs_release_tag,
-        qt6_release_tag=qt6_release_tag,
-        qt6_mapping_function=qt6_mapping_function,
-        include_test_dependencies=False,
-    )
+        provider_module = importlib.import_module(module_name)
 
-    first_party_libs = _resolve_first_party_closure(required_libs)
-    downloadable = [lib for lib in first_party_libs if lib in FIRST_PARTY_LIBRARY_DEPENDENCIES]
-    if downloadable:
+        provider_manifest_desc = EXTERNAL_PROVIDERS_MAP[provider]
+
+        manifest_filename = Path(
+            Orchestrator.compose_name_version_to_string(
+                provider_manifest_desc.project_name, provider_manifest_desc.project_version
+            )
+            + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION,
+        )
+
+        provider_manifest_loaded = ReleaseManifest.load_release_manifest(dependencies_config_path / manifest_filename)
+
         report.append_report(
-            download_csorchestrator_managed_libraries(
+            provider_module.auto_install_csorchestrator_managed_libraries(
                 orchestrator=orchestrator,
-                base_url=base_url,
-                org=org,
-                git_repo=CSFOUNDATION_PROJECT_NAME,
-                project_name=CSFOUNDATION_PROJECT_NAME,
-                project_version=CSFOUNDATION_PROJECT_VERSION,
-                release_tag=csfoundation_release_tag,
                 base_libs_dir=base_libs_dir,
-                lib_name_list=downloadable,
-                library_dependencies=FIRST_PARTY_LIBRARY_DEPENDENCIES,
+                required_libs=libs,
+                manifest_description=provider_manifest_desc,
+                manifest_loaded=provider_manifest_loaded,
             )
         )
 

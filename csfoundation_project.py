@@ -24,7 +24,6 @@ from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConf
 from csfoundation_config import (
     CSFOUNDATION_PROJECT_NAME,
     CSFOUNDATION_PROJECT_VERSION,
-    install_csfoundation_build_dependencies,
 )
 
 
@@ -68,13 +67,16 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     # csqt6 releases (e.g. qt6 only when csVisOpenGL is built).
     built_first_party_libs = extract_repo_list_build_non_none(extract_build_config_dict(repos))
 
-    report.append_report(
-        install_csfoundation_build_dependencies(
-            orchestrator=o,
-            base_libs_dir=base_libs_dir,
-            required_libs=built_first_party_libs,
-        )
-    )
+    # TODO bring back to work when ready
+    _ = base_libs_dir
+    # report.append_report(
+    #
+    #     ##  install_csfoundation_build_dependencies(
+    #     ##      orchestrator=o,
+    #     ##      base_libs_dir=base_libs_dir,
+    #     ##      required_libs=built_first_party_libs,
+    #     ##  )
+    # )
 
     # ----------------------------------------------------------------
     build_repos(

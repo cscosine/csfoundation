@@ -11,7 +11,8 @@ boilerplate.
 from pathlib import Path
 
 from csorchestrator.application.recipes.manifest_github import (
-    download_csorchestrator_managed_libraries,
+    ManifestGithub,
+    create_steps_to_get_libs_from_manifest,
 )
 from csorchestrator.domain.context.context_compiler_generator import (
     Compiler,
@@ -26,8 +27,8 @@ from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     MappingFunction,
-    StepGetPrecompiledLibGithub,
 )
+from csorchestrator.portable.release_manifest import ReleaseManifest
 
 # ---------------------------------------------------------------------------
 # Single source of truth for the project identity.  ``csqt6_project.py``
@@ -36,6 +37,7 @@ from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
 # ---------------------------------------------------------------------------
 CSQT6_PROJECT_NAME: str = "csqt6"
 CSQT6_PROJECT_VERSION: str = "6.11.1"
+CSQT6_PROJECT_RELEASE_TAG: str = "v6.11.1-rc1"
 
 # ---------------------------------------------------------------------------
 # Authoritative list of library dependencies.
@@ -73,52 +75,21 @@ def qt6_mapping(
 
 def auto_install_csorchestrator_managed_libraries(
     orchestrator: Orchestrator,
-    release_tag: str,
     base_libs_dir: Path,
+    manifest_description: ManifestGithub,
+    manifest_loaded: ReleaseManifest,
     required_libs: list[str] | None = None,
-    org: str = "cscosine",
-    git_repo: str = CSQT6_PROJECT_NAME,
-    base_url: str = StepGetPrecompiledLibGithub.GITHUB_BASE_URL_HTTPS,
     mapping_function: MappingFunction | None = qt6_mapping,
 ) -> Report:
-    """Download the manifest, the bundle, and the requested managed libraries.
 
-    This is a convenience wrapper around
-    ``download_csorchestrator_managed_libraries`` that:
+    # TODO resolve libs for transitive deps and resolve "none" --> all libs
+    # opt1: here, but then every libs has to handle, opt2, in create_steps_to_get_libs_from_manifest
 
-    * Uses **sensible defaults** for the repository identity (org, git repo,
-      project name / version) so consumer code only has to pass the two
-      genuinely variable arguments: ``release_tag`` and ``base_libs_dir``.
-    * Accepts an optional ``required_libs`` list.  When provided, missing
-      dependencies are **auto-filled transitively** by csorchestrator itself
-      (via the ``library_dependencies`` parameter, sourced from
-      ``LIBRARY_DEPENDENCIES``).  For csqt6 the map is empty because the Qt 6
-      build has no csorchestrator-managed library dependencies, but the
-      mechanism is wired in for future use.
-    * Accepts an optional ``mapping_function`` (defaults to ``qt6_mapping``,
-      the toolchain mapping defined in this file) used to select the prebuilt
-      variant matching the consuming platform (OS / architecture / compiler /
-      generator) from the release matrix.  Pass ``None`` to fall back to
-      csorchestrator's built-in selection behaviour.
-    * Returns a combined ``Report`` that the caller can append to their own
-      report object.
-    """
-
-    # ------------------------------------------------------------------
-    # Delegate to the csorchestrator download helper (manifest + bundle + libs).
-    # Transitive dependency auto-fill is performed inside csorchestrator via
-    # the ``library_dependencies`` mapping.
-    # ------------------------------------------------------------------
-    return download_csorchestrator_managed_libraries(
+    return create_steps_to_get_libs_from_manifest(
         orchestrator=orchestrator,
-        base_url=base_url,
-        org=org,
-        git_repo=git_repo,
-        project_name=CSQT6_PROJECT_NAME,
-        project_version=CSQT6_PROJECT_VERSION,
-        release_tag=release_tag,
+        manifest_description=manifest_description,
+        manifest_loaded=manifest_loaded,
         base_libs_dir=base_libs_dir,
-        lib_name_list=required_libs or None,
-        library_dependencies=LIBRARY_DEPENDENCIES,
+        lib_name_list=required_libs,
         mapping_function=mapping_function,
     )
