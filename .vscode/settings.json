@@ -4,7 +4,21 @@
   "python.testing.pytestArgs": [
     "tests"
   ],
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.analysis.typeCheckingMode": "strict",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.indexing": true,
+  "python.analysis.diagnosticMode": "openFilesOnly",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/../csorchestrator/src",
+    "${workspaceFolder}"
+  ],
+  "python.analysis.packageIndexDepths": [
+    {
+      "name": "csorchestrator",
+      "depth": 10
+    }
+  ],
   "python.analysis.exclude": [
     "./workspace",
     "**/node_modules",
