@@ -67,6 +67,8 @@ def install_csfoundation_build_dependencies(
 
     report = Report()
 
+    required_libs = fill_in_library_list(required_libs, LIBRARY_LIST)
+
     # the packages we need to install
     install_requirements(orchestrator=orchestrator, lib_list=required_libs, dev=dev)
 
@@ -91,7 +93,6 @@ def install_csfoundation_build_dependencies(
 
     external_providers = [
         third_party_base_libs_provider,
-        csqt6_provider,
     ]
 
     external_dependencies = {
@@ -101,10 +102,6 @@ def install_csfoundation_build_dependencies(
             "csLie": ["eigen3"],
             "csCamera": ["eigen3"],
             "csVisOpenGL": ["eigen3"],
-        },
-        # provider qt6
-        csqt6_provider.project_name: {
-            "csVisOpenGL": ["qt6"],
         },
     }
 
@@ -118,7 +115,16 @@ def install_csfoundation_build_dependencies(
         },
     }
 
-    provider_mapping_functions_names = {csqt6_provider.project_name: "qt6_mapping"}
+    provider_mapping_functions_names = {}
+
+    if "csVisOpenGL" in required_libs:
+        external_providers.append(csqt6_provider)
+
+        external_dependencies[csqt6_provider.project_name] = {
+            "csVisOpenGL": ["qt6"],
+        }
+
+        provider_mapping_functions_names = {csqt6_provider.project_name: "qt6_mapping"}
 
     # and the dependent external libraries
 
