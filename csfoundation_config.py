@@ -7,6 +7,8 @@ from csorchestrator.application.recipes.manifest_github import (
     LibraryList,
     ManifestGithub,
     ProviderList,
+    download_manifest,
+    download_manifest_bundle,
     extract_provider_libs_list,
     extract_provider_names,
     fill_in_libraries_in_dependecies,
@@ -23,9 +25,6 @@ from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
     StepGetPrecompiledLibGithub,
 )
 from csorchestrator.portable.release_manifest import ReleaseManifest
-
-CSFOUNDATION_PROJECT_NAME: str = "csfoundation"
-CSFOUNDATION_PROJECT_VERSION: str = "0.1.0"
 
 LIBRARY_LIST: LibraryList = ["csCore", "csLie", "csCamera", "csVisOpenGL"]
 
@@ -145,8 +144,7 @@ def install_csfoundation_build_dependencies(
     report = Report()
 
     # the packages we need to install
-    # TODO add this back when ready
-    # install_requirements(orchestrator, required_libs)
+    install_requirements(orchestrator, required_libs)
 
     # the library requested
     required_libs = fill_in_library_list(required_libs, LIBRARY_LIST)
@@ -175,7 +173,22 @@ def install_csfoundation_build_dependencies(
             libs_external_dependencies, libs_external_dependencies_dev
         )
 
-    # TODO: download the manifest and the bundle, can be done separately
+    for _, provider_manifest_desc in EXTERNAL_PROVIDERS_MAP.items():
+        manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
+
+        manifest = download_manifest(provider_manifest_desc, Path(dependencies_config_path))
+        report.append_report(manifest.report)
+        if manifest.result is not None:
+            report.append_report(
+                download_manifest_bundle(
+                    provider_manifest_desc,
+                    ReleaseManifest.load_release_manifest(manifest.result),
+                    Path(dependencies_config_path),
+                )
+            )
+
+    if report.has_errors():
+        return report
 
     # for each provider, load the module it provides and run its autoinstall
     provider_libs_list = extract_provider_libs_list(libs_external_dependencies)
@@ -187,12 +200,7 @@ def install_csfoundation_build_dependencies(
 
         provider_manifest_desc = EXTERNAL_PROVIDERS_MAP[provider]
 
-        manifest_filename = Path(
-            Orchestrator.compose_name_version_to_string(
-                provider_manifest_desc.project_name, provider_manifest_desc.project_version
-            )
-            + ReleaseManifest.CSORCHESTRATOR_MANIFEST_EXTENSION,
-        )
+        manifest_filename = Path(provider_manifest_desc.create_manifest_filename())
 
         provider_manifest_loaded = ReleaseManifest.load_release_manifest(dependencies_config_path / manifest_filename)
 
@@ -203,6 +211,7 @@ def install_csfoundation_build_dependencies(
                 required_libs=libs,
                 manifest_description=provider_manifest_desc,
                 manifest_loaded=provider_manifest_loaded,
+                # mapping ?
             )
         )
 

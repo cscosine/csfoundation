@@ -3,24 +3,56 @@
     "additional_files": [
       "third_party_base_libs_config.py"
     ],
+    "dependencies": {
+      "Catch2": [],
+      "NamedType": [],
+      "cpptrace": [],
+      "eigen3": [],
+      "fmt": [],
+      "fmt-eigen": [
+        "eigen3",
+        "fmt"
+      ],
+      "libassert": [
+        "cpptrace"
+      ],
+      "magic_enum": [],
+      "pipes": [],
+      "tclap": [],
+      "tl-expected": [],
+      "tl-optional": []
+    },
+    "dependencies_dev": {
+      "Catch2": [],
+      "NamedType": [],
+      "cpptrace": [],
+      "eigen3": [],
+      "fmt": [],
+      "fmt-eigen": [],
+      "libassert": [],
+      "magic_enum": [],
+      "pipes": [],
+      "tclap": [],
+      "tl-expected": [],
+      "tl-optional": []
+    },
     "headers_only_packages": [
       "magic_enum",
-      "tclap",
       "eigen3",
-      "tl-expected",
-      "pipes",
+      "tl-optional",
       "fmt-eigen",
-      "NamedType",
-      "tl-optional"
+      "pipes",
+      "tl-expected",
+      "tclap",
+      "NamedType"
     ],
     "manifest_version": "1.0",
     "output_bundle_file_name": "third_party_base_libs-0.1.0-bundle.tar.gz",
     "packages": [
-      "fmt",
       "Catch2",
       "cpptrace",
-      "csCMake",
-      "libassert"
+      "libassert",
+      "fmt"
     ],
     "project_name": "third_party_base_libs",
     "project_version": "0.1.0",

@@ -22,8 +22,9 @@ from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
 
 from csfoundation_config import (
-    CSFOUNDATION_PROJECT_NAME,
-    CSFOUNDATION_PROJECT_VERSION,
+    LIBRARY_DEPENDENCIES,
+    LIBRARY_DEPENDENCIES_DEV,
+    install_csfoundation_build_dependencies,
 )
 
 
@@ -43,11 +44,22 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         "csVisOpenGL": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
     }
 
+    # convert to dict[str, set(str)]
+    library_dependencies: dict[str, set[str]] = {
+        name: set(dependencies) for name, dependencies in LIBRARY_DEPENDENCIES.items()
+    }
+
+    library_dependencies_dev: dict[str, set[str]] = {
+        name: set(dependencies) for name, dependencies in LIBRARY_DEPENDENCIES_DEV.items()
+    }
+
     o = create_default_orchestrator(
-        name=CSFOUNDATION_PROJECT_NAME,
-        version=CSFOUNDATION_PROJECT_VERSION,
+        name="csfoundation",
+        version="0.1.0",
         base_install_dir=base_install_dir,
         additional_files_list=[Path("csfoundation_config.py")],
+        repo_dependencies_dict=library_dependencies,
+        repo_dependencies_dev_dict=library_dependencies_dev,
     )
 
     # ----------------------------------------------------------------
@@ -67,16 +79,15 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     # csqt6 releases (e.g. qt6 only when csVisOpenGL is built).
     built_first_party_libs = extract_repo_list_build_non_none(extract_build_config_dict(repos))
 
-    # TODO bring back to work when ready
-    _ = base_libs_dir
-    # report.append_report(
-    #
-    #     ##  install_csfoundation_build_dependencies(
-    #     ##      orchestrator=o,
-    #     ##      base_libs_dir=base_libs_dir,
-    #     ##      required_libs=built_first_party_libs,
-    #     ##  )
-    # )
+    report.append_report(
+        install_csfoundation_build_dependencies(
+            orchestrator=o,
+            base_libs_dir=base_libs_dir,
+            required_libs=built_first_party_libs,
+            dev=True,
+            dependencies_config_path="dependencies",
+        )
+    )
 
     # ----------------------------------------------------------------
     build_repos(
