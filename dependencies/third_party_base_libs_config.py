@@ -17,9 +17,12 @@ def auto_install_csorchestrator_managed_libraries(
     base_libs_dir: Path,
     manifest_description: ManifestGithub,
     manifest_loaded: ReleaseManifest,
+    dependencies_config_path: Path,
+    mapping_function: MappingFunction,
     required_libs: list[str] | None = None,
-    mapping_function: MappingFunction | None = None,
 ) -> Report:
+
+    _ = dependencies_config_path
 
     return create_steps_to_get_libs_from_manifest(
         orchestrator=orchestrator,

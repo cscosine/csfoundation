@@ -20,6 +20,7 @@ from csorchestrator.application.recipes.repos_config import (
 )
 from csorchestrator.foundation.core.report import Report
 from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
+from csorchestrator.frontend.step.step_get_precompiled_lib_github import identity_mapping_function
 
 from csfoundation_config import (
     LIBRARY_DEPENDENCIES,
@@ -79,13 +80,19 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     # csqt6 releases (e.g. qt6 only when csVisOpenGL is built).
     built_first_party_libs = extract_repo_list_build_non_none(extract_build_config_dict(repos))
 
+    report.append_warning(
+        "WAR: install_csfoundation_build_dependencies download_dependencies_manifest_and_bundle=False"
+    )
+
     report.append_report(
         install_csfoundation_build_dependencies(
             orchestrator=o,
             base_libs_dir=base_libs_dir,
             required_libs=built_first_party_libs,
             dev=True,
-            dependencies_config_path="dependencies",
+            dependencies_config_path=Path("dependencies"),
+            mapping_function=identity_mapping_function,
+            download_dependencies_manifest_and_bundle=False,
         )
     )
 
