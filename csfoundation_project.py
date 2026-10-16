@@ -80,10 +80,6 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     # csqt6 releases (e.g. qt6 only when csVisOpenGL is built).
     built_first_party_libs = extract_repo_list_build_non_none(extract_build_config_dict(repos))
 
-    report.append_warning(
-        "WAR: install_csfoundation_build_dependencies download_dependencies_manifest_and_bundle=False"
-    )
-
     report.append_report(
         install_csfoundation_build_dependencies(
             orchestrator=o,
@@ -92,7 +88,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
             dev=True,
             dependencies_config_path=Path("dependencies"),
             mapping_function=identity_mapping_function,
-            download_dependencies_manifest_and_bundle=False,
+            download_dependencies_manifest_and_bundle=True,
         )
     )
 

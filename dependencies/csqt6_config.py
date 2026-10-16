@@ -1,9 +1,6 @@
 from pathlib import Path
 
-from csorchestrator.application.recipes.manifest_github import (
-    ManifestGithub,
-    create_steps_to_get_libs_from_manifest,
-)
+from csorchestrator.application.recipes.manifest_github import ManifestGithub, create_steps_to_get_libs_from_manifest
 from csorchestrator.domain.context.context_compiler_generator import (
     Compiler,
     ContextCompilerGenerator,
@@ -15,9 +12,7 @@ from csorchestrator.domain.context.context_os_architecture_compiler_generator im
 )
 from csorchestrator.domain.orchestrator.orchestrator import Orchestrator
 from csorchestrator.foundation.core.report import Report
-from csorchestrator.frontend.step.step_get_precompiled_lib_github import (
-    MappingFunction,
-)
+from csorchestrator.frontend.step.step_get_precompiled_lib_github import MappingFunction
 from csorchestrator.portable.release_manifest import ReleaseManifest
 
 

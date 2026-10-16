@@ -38,21 +38,21 @@
     },
     "headers_only_packages": [
       "magic_enum",
-      "eigen3",
-      "tl-optional",
-      "fmt-eigen",
+      "NamedType",
       "pipes",
-      "tl-expected",
+      "eigen3",
       "tclap",
-      "NamedType"
+      "tl-expected",
+      "fmt-eigen",
+      "tl-optional"
     ],
     "manifest_version": "1.0",
     "output_bundle_file_name": "third_party_base_libs-0.1.0-bundle.tar.gz",
     "packages": [
+      "fmt",
       "Catch2",
       "cpptrace",
-      "libassert",
-      "fmt"
+      "libassert"
     ],
     "project_name": "third_party_base_libs",
     "project_version": "0.1.0",
