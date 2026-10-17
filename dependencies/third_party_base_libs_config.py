@@ -19,10 +19,13 @@ def auto_install_csorchestrator_managed_libraries(
     manifest_loaded: ReleaseManifest,
     dependencies_config_path: Path,
     mapping_function: MappingFunction,
+    download_dependencies_manifest_and_bundle: bool,
+    phase_name_suffix: str,
     required_libs: list[str] | None = None,
 ) -> Report:
 
     _ = dependencies_config_path
+    _ = download_dependencies_manifest_and_bundle
 
     return create_steps_to_get_libs_from_manifest(
         orchestrator=orchestrator,
@@ -31,4 +34,6 @@ def auto_install_csorchestrator_managed_libraries(
         base_libs_dir=base_libs_dir,
         lib_name_list=required_libs,
         mapping_function=mapping_function,
+        phase_name=phase_name_suffix,
+        dev=False,
     )

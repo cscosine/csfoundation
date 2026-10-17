@@ -62,12 +62,11 @@ def install_csfoundation_build_dependencies(
     dev: bool,
     download_dependencies_manifest_and_bundle: bool,
     mapping_function: MappingFunction,
+    phase_name_suffix: str,
     required_libs: list[str] | None = None,
 ) -> Report:
 
     report = Report()
-
-    required_libs = fill_in_library_list(required_libs, LIBRARY_LIST)
 
     # the packages we need to install
     install_requirements(orchestrator=orchestrator, lib_list=required_libs, dev=dev)
@@ -79,7 +78,7 @@ def install_csfoundation_build_dependencies(
         git_repo="third_party_base_libs",
         project_name="third_party_base_libs",
         project_version="0.1.0",
-        release_tag="v0.1.0-rc2",
+        release_tag="v0.1.0-rc3",
     )
 
     csqt6_provider = ManifestGithub(
@@ -88,7 +87,7 @@ def install_csfoundation_build_dependencies(
         git_repo="csqt6",
         project_name="csqt6",
         project_version="6.11.1",
-        release_tag="v6.11.1-rc2",
+        release_tag="v6.11.1-rc3",
     )
 
     external_providers = [
@@ -117,7 +116,7 @@ def install_csfoundation_build_dependencies(
 
     provider_mapping_functions_names = {}
 
-    if "csVisOpenGL" in required_libs:
+    if required_libs is None or "csVisOpenGL" in required_libs:
         external_providers.append(csqt6_provider)
 
         external_dependencies[csqt6_provider.project_name] = {
@@ -144,6 +143,7 @@ def install_csfoundation_build_dependencies(
             external_library_dependencies_dev=external_dependencies_dev,
             external_provides_description=external_providers,
             provider_mapping_function=provider_mapping_functions_names,
+            phase_name_suffix=phase_name_suffix,
         )
     )
 
@@ -157,6 +157,8 @@ def auto_install_csorchestrator_managed_libraries(
     manifest_loaded: ReleaseManifest,
     dependencies_config_path: Path,
     mapping_function: MappingFunction,
+    download_dependencies_manifest_and_bundle: bool,
+    phase_name_suffix: str,
     required_libs: list[str] | None = None,
 ) -> Report:
 
@@ -166,9 +168,10 @@ def auto_install_csorchestrator_managed_libraries(
         base_libs_dir=base_libs_dir,
         dependencies_config_path=dependencies_config_path,
         dev=False,
-        download_dependencies_manifest_and_bundle=True,
+        download_dependencies_manifest_and_bundle=download_dependencies_manifest_and_bundle,
         required_libs=required_libs,
         mapping_function=mapping_function,
+        phase_name_suffix=phase_name_suffix,
     )
 
     report.append_report(
@@ -179,6 +182,8 @@ def auto_install_csorchestrator_managed_libraries(
             base_libs_dir=base_libs_dir,
             lib_name_list=required_libs,
             mapping_function=mapping_function,
+            phase_name=phase_name_suffix,
+            dev=False,
         )
     )
 

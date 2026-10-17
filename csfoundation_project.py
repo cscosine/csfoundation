@@ -89,6 +89,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
             dependencies_config_path=Path("dependencies"),
             mapping_function=identity_mapping_function,
             download_dependencies_manifest_and_bundle=True,
+            phase_name_suffix="csoptimization dependencies",
         )
     )
 
