@@ -31,6 +31,7 @@ LIBRARY_DEPENDENCIES_DEV: dict[str, list[str]] = {}
 def install_requirements(
     orchestrator: Orchestrator,
     dev: bool,
+    phase_name_suffix: str,
     lib_list: list[str] | None = None,  # none means all
 ) -> None:
     """Install the Linux system requirements needed by the requested libraries.
@@ -46,12 +47,13 @@ def install_requirements(
 
     if "csVisOpenGL" in lib_list:
         install_ubuntu_apt_packages(
-            orchestrator,
-            [
+            orchestrator=orchestrator,
+            packages=[
                 "libgl1-mesa-dev",
                 "libopengl-dev",
                 "mesa-common-dev",
             ],
+            phase_name_suffix=phase_name_suffix,
         )
 
 
@@ -69,7 +71,9 @@ def install_csfoundation_build_dependencies(
     report = Report()
 
     # the packages we need to install
-    install_requirements(orchestrator=orchestrator, lib_list=required_libs, dev=dev)
+    install_requirements(
+        orchestrator=orchestrator, lib_list=required_libs, dev=dev, phase_name_suffix=phase_name_suffix
+    )
 
     # external providers
     third_party_base_libs_provider = ManifestGithub(
