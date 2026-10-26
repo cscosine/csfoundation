@@ -101,24 +101,34 @@ def install_csfoundation_build_dependencies(
     external_dependencies = {
         # provider third_party_base_libs
         third_party_base_libs_provider.project_name: {
-            "csCore": ["eigen3", "fmt", "fmt-eigen", "libassert", "pipes", "NamedType", "tl-expected", "tl-optional"],
+            "csCore": [
+                "eigen3",
+                "Catch2",
+                "fmt",
+                "fmt-eigen",
+                "libassert",
+                "pipes",
+                "NamedType",
+                "tl-expected",
+                "tl-optional",
+            ],
             "csLie": ["eigen3"],
             "csCamera": ["eigen3"],
             "csVisOpenGL": ["eigen3"],
         },
     }
 
-    external_dependencies_dev = {
+    external_dependencies_dev: dict[str, dict[str, list[str]]] = {
         # provider third_party_base_libs
         third_party_base_libs_provider.project_name: {
-            "csCore": ["Catch2"],
+            "csCore": [],  # csCore needs "Catch2" also in non-dev
             "csLie": ["Catch2"],
             "csCamera": ["Catch2"],
             "csVisOpenGL": ["Catch2"],
         },
     }
 
-    provider_mapping_functions_names = {}
+    provider_mapping_functions_names: dict[str, str | MappingFunction] = {}
 
     if required_libs is None or "csVisOpenGL" in required_libs:
         external_providers.append(csqt6_provider)
