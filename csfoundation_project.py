@@ -35,7 +35,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     base_target_dir = Path("workspace")
     base_install_dir = base_target_dir / Path("install")
     base_libs_dir = base_target_dir / Path("libs")
-    common_repo_ref = "dev"
+    common_repo_ref = "feature/productize"
 
     repos: RepoRefBuildPublishConfigDict = {
         "csCMake": RepoRefBuildPublishConfig(common_repo_ref, None),
