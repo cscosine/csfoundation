@@ -61,6 +61,8 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         additional_files_list=[Path("csfoundation_config.py")],
         repo_dependencies_dict=library_dependencies,
         repo_dependencies_dev_dict=library_dependencies_dev,
+        # feature/productize: CI on the csCMake productize migration; remove when merged into dev
+        on_push_branches=["main", "dev", "feature/productize"],
     )
 
     # ----------------------------------------------------------------

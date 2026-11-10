@@ -4,6 +4,7 @@ name: csfoundation
     branches:
     - main
     - dev
+    - feature/productize
     tags:
     - v*.*.*
   pull_request:
@@ -267,7 +268,7 @@ jobs:
       with:
         repository: cscosine/csCMake.git
         path: workspace/csCMake
-        ref: dev
+        ref: feature/productize
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
     - name: csCore Git clone/pull-ff
@@ -275,7 +276,7 @@ jobs:
       with:
         repository: cscosine/csCore.git
         path: workspace/csCore
-        ref: dev
+        ref: feature/productize
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
     - name: csLie Git clone/pull-ff
@@ -283,7 +284,7 @@ jobs:
       with:
         repository: cscosine/csLie.git
         path: workspace/csLie
-        ref: dev
+        ref: feature/productize
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
     - name: csCamera Git clone/pull-ff
@@ -291,7 +292,7 @@ jobs:
       with:
         repository: cscosine/csCamera.git
         path: workspace/csCamera
-        ref: dev
+        ref: feature/productize
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
     - name: csVisOpenGL Git clone/pull-ff
@@ -299,7 +300,7 @@ jobs:
       with:
         repository: cscosine/csVisOpenGL.git
         path: workspace/csVisOpenGL
-        ref: dev
+        ref: feature/productize
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
     - name: Run command install apt packages
