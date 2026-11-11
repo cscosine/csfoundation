@@ -11,6 +11,7 @@ from csorchestrator.application.recipes.checkout_build import (
     create_and_upload_artifacts,
 )
 from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
+from csorchestrator.application.recipes.cscmake_release import create_cscmake_release_archive
 from csorchestrator.application.recipes.repos_config import (
     RepoRefBuildPublishConfig,
     RepoRefBuildPublishConfigDict,
@@ -36,9 +37,9 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     base_install_dir = base_target_dir / Path("install")
     base_libs_dir = base_target_dir / Path("libs")
     common_repo_ref = "dev"
+    cscmake_version = "1.0.0-rc1"
 
     repos: RepoRefBuildPublishConfigDict = {
-        "csCMake": RepoRefBuildPublishConfig(common_repo_ref, None),
         "csCore": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
         "csLie": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
         "csCamera": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
@@ -69,6 +70,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         base_target_dir=base_target_dir,
         repo_ref_dict=extract_repo_ref_dict(repos),
         repo_access_token="${{ secrets.ACTIONS_ORG_ACCESS }}",
+        release_archive_list=[create_cscmake_release_archive(cscmake_version)],
     )
 
     # ----------------------------------------------------------------

@@ -1,6 +1,6 @@
 # csfoundation
 
-Automated cross-platform build system and CI pipeline recipe for the **base C++ libraries** (csCMake, csCore, csLie, csCamera, csVisOpenGL) of the cscosine ecosystem, powered by [**csorchestrator**](https://github.com/cscosine/csorchestrator).
+Automated cross-platform build system and CI pipeline recipe for the **base C++ libraries** (csCore, csLie, csCamera, csVisOpenGL) of the cscosine ecosystem, powered by [**csorchestrator**](https://github.com/cscosine/csorchestrator).
 
 ---
 
@@ -96,7 +96,8 @@ and in [`pyproject.toml`](pyproject.toml) — keep the two aligned when bumping 
 1. **Repos Self Checkout & Update**:
    - Performs a shallow (`depth=1`) self-checkout of this repository so release assembly runs on the runner.
 2. **Checkout Repositories**: for every repository configured in [`csfoundation_project.py`](csfoundation_project.py):
-   - Clones or pulls the repositories (`csCMake`, `csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `dev`).
+   - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0-rc1`) and unpacks it into `workspace/csCMake`, where the presets of the libraries find it (sibling layout).
+   - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `dev`).
 3. **Install Requirements (Linux-Ubuntu)**:
    - Installs the OpenGL system packages required by the GUI libraries (`libgl1-mesa-dev`, `libopengl-dev`, `mesa-common-dev`) — only when `csVisOpenGL` is among the libraries being built.
 4. **Get Precompiled Libraries**:
@@ -116,7 +117,6 @@ and in [`pyproject.toml`](pyproject.toml) — keep the two aligned when bumping 
 
 | Repository | BuildConfig |
 |---|---|
-| csCMake | `None` (checked out, not built) |
 | csCore | `DEBUG_RELEASE_RELWITHDEBINFO_PARANOID` |
 | csLie | `DEBUG_RELEASE_RELWITHDEBINFO_PARANOID` |
 | csCamera | `DEBUG_RELEASE_RELWITHDEBINFO_PARANOID` |
@@ -221,7 +221,7 @@ graph TD
 
 **Notes:**
 
-- **`csCMake` is intentionally not in the graph**: it is build *tooling* used by every `csCMake`-based repo at **configure time** via `include(csCMake)` (e.g. [`workspace/csCore/CMakeLists.txt`](workspace/csCore/CMakeLists.txt#L5)) — it is checked out but not built, and it is not a runtime / install-time dependency of any installed library.
+- **`csCMake` is intentionally not in the graph**: it is build *tooling* used by every `csCMake`-based repo at **configure time** via `include(csCMake)` (e.g. [`workspace/csCore/CMakeLists.txt`](workspace/csCore/CMakeLists.txt#L5)) — it is the release package unpacked in `workspace/csCMake`, not built, and it is not a runtime / install-time dependency of any installed library.
 - **csCore is a *solution* repo**: the first-party libraries consume its components rather than the umbrella target — `csLie`, `csCamera`, and `csVisOpenGL` all link `csCore::core` + `csCore::eigenUtils` (csLie tests additionally use `csCore::math` + `csCore::testUtils`).
 - **Qt6 is consumed only by `csVisOpenGL`** (`Core`, `Gui`, `OpenGL`, `Widgets`, `OpenGLWidgets`); the raw `OpenGL` dependency is satisfied by Linux system packages on the Ubuntu runners.
 - **`magic_enum` and `tclap` are published in the `third_party_base_libs` release but not referenced by any `cs*` `CMakeLists.txt`** — they are standalone leaf libraries in the third_party_base_libs recipe and ship in its precompiled bundle, but they are **not downloaded** by this recipe since no first-party library requires them.
@@ -238,7 +238,6 @@ graph TD
 The repositories built by this project are declared in the `repos` dictionary of
 [`csfoundation_project.py`](csfoundation_project.py):
 
-* `csCMake` — checkout-only (`None` build config)
 * `csCore`, `csLie`, `csCamera`, `csVisOpenGL` — built with
   `BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID`
 
