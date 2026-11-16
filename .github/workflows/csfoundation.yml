@@ -413,6 +413,32 @@ jobs:
         ref: dev
         fetch-depth: '1'
         token: ${{ secrets.ACTIONS_ORG_ACCESS }}
+    - name: Run command install the OpenMP runtime of clang
+      run: |-
+        set -euo pipefail # enable strict mode
+
+
+        packages=(
+          libomp-dev
+        )
+
+        missing=()
+
+        for pkg in "${packages[@]}"; do
+          dpkg -s "$pkg" &>/dev/null || missing+=("$pkg")
+        done
+
+        if [ ${#missing[@]} -ne 0 ]; then
+
+          sudo apt update
+
+          echo "Need to install missing packages: ${missing[*]}"
+          sudo apt install -y "${missing[@]}"
+        else
+          echo "All packages already installed."
+        fi
+      if: ${{ matrix.os == 'linux' && startsWith(matrix.os_version, 'ubuntu') }}
+      shell: bash
     - name: Run command install apt packages
       run: |-
         set -euo pipefail # enable strict mode

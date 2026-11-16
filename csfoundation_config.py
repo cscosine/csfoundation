@@ -36,14 +36,25 @@ def install_requirements(
 ) -> None:
     """Install the Linux system requirements needed by the requested libraries.
 
-    The OpenGL system packages are only required by ``csVisOpenGL``, so they
-    are installed only when it is in ``lib_list`` (``None`` means all
-    libraries).
+    The OpenMP runtime of clang (``libomp-dev``) for every library (all depend on
+    ``csCore``, which uses OpenMP); the OpenGL system packages are only required
+    by ``csVisOpenGL``, so they are installed only when it is in ``lib_list``
+    (``None`` means all libraries).
     """
 
     lib_list = fill_in_library_list(lib_list, LIBRARY_LIST)
 
     _ = dev  # ignore dev, those packages are required both in development and as dependencies
+
+    # OpenMP runtime of clang (cs_target_use_openmp: csCore, and the libraries of the consumers through CS_OMP); GCC
+    # ships its own (libgomp), Apple Clang builds without OpenMP. Every library depends on csCore.
+    install_ubuntu_apt_packages(
+        orchestrator=orchestrator,
+        packages=["libomp-dev"],
+        phase_name_suffix=phase_name_suffix,
+        step_name="install the OpenMP runtime of clang",
+        phase_name="Install OpenMP (Linux-Ubuntu)",
+    )
 
     if "csVisOpenGL" in lib_list:
         install_ubuntu_apt_packages(
