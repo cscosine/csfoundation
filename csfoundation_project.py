@@ -9,9 +9,11 @@ from csorchestrator.application.recipes.checkout_build import (
     build_repos,
     checkout_repos,
     create_and_upload_artifacts,
+    create_and_upload_deployments,
 )
 from csorchestrator.application.recipes.create_orchestrator import create_default_orchestrator
 from csorchestrator.application.recipes.cscmake_release import create_cscmake_release_archive
+from csorchestrator.application.recipes.gui_deployments import add_gui_deployment_smoke_test_return_0
 from csorchestrator.application.recipes.repos_config import (
     RepoRefBuildPublishConfig,
     RepoRefBuildPublishConfigDict,
@@ -20,7 +22,11 @@ from csorchestrator.application.recipes.repos_config import (
     extract_repo_ref_dict,
 )
 from csorchestrator.foundation.core.report import Report
-from csorchestrator.frontend.cscmake_presets.supported_variants import BuildConfig
+from csorchestrator.frontend.cscmake_presets.supported_variants import (
+    BuildConfig,
+    get_context_list_linux,
+    get_context_list_macos,
+)
 from csorchestrator.frontend.step.step_get_precompiled_lib_github import identity_mapping_function
 
 from csfoundation_config import (
@@ -36,8 +42,11 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     base_target_dir = Path("workspace")
     base_install_dir = base_target_dir / Path("install")
     base_libs_dir = base_target_dir / Path("libs")
+    base_build_dir = base_target_dir / Path("build")
+    deploy_archives_dir = base_target_dir / Path("deploy-archives")
     common_repo_ref = "dev"
-    cscmake_version = "1.0.0-rc1"
+    cscmake_version = "1.0.0-rc7"
+    build_config = BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID
 
     repos: RepoRefBuildPublishConfigDict = {
         "csCore": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
@@ -62,6 +71,12 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         additional_files_list=[Path("csfoundation_config.py")],
         repo_dependencies_dict=library_dependencies,
         repo_dependencies_dev_dict=library_dependencies_dev,
+        # opt-in variants: Ubuntu 26.04 (as 22.04/24.04), macOS 15/26 (Ninja Multi-Config, Xcode)
+        additional_matrix_list=(
+            get_context_list_linux("ubuntu26.04")
+            + get_context_list_macos("macos15")
+            + get_context_list_macos("macos26")
+        ),
     )
 
     # ----------------------------------------------------------------
@@ -107,6 +122,26 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         base_install_dir=base_install_dir,
         repos_auto_search_list=built_first_party_libs,
     )
+
+    # ----------------------------------------------------------------
+    # deployments (cs_deployment in csVisOpenGL/sample/CMakeLists.txt, made by the install): archived, uploaded,
+    # attached to the release; then run, extracted from their archive, with a clean environment: the closing check of
+    # the whole chain (third_party_base_libs, csqt6, the libraries of csfoundation, the deployment of csCMake)
+    if "csVisOpenGL" in built_first_party_libs:
+        create_and_upload_deployments(
+            orchestrator=o,
+            base_build_dir=base_build_dir,
+            build_config=build_config,
+            output_dir=deploy_archives_dir,
+        )
+        add_gui_deployment_smoke_test_return_0(
+            o,
+            deployment="sample",
+            executable="bin/csVisOpenGLSample",
+            base_build_dir=base_build_dir,
+            build_config=build_config,
+            archives_dir=deploy_archives_dir,
+        )
 
     # single return point
     if report.has_errors():
