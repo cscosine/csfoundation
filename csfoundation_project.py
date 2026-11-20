@@ -44,8 +44,8 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     base_libs_dir = base_target_dir / Path("libs")
     base_build_dir = base_target_dir / Path("build")
     deploy_archives_dir = base_target_dir / Path("deploy-archives")
-    common_repo_ref = "dev"
-    cscmake_version = "1.0.0-rc7"
+    common_repo_ref = "main"
+    cscmake_version = "1.0.0-rc8"
     build_config = BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID
 
     repos: RepoRefBuildPublishConfigDict = {
@@ -84,7 +84,6 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
         orchestrator=o,
         base_target_dir=base_target_dir,
         repo_ref_dict=extract_repo_ref_dict(repos),
-        repo_access_token="${{ secrets.ACTIONS_ORG_ACCESS }}",
         release_archive_list=[create_cscmake_release_archive(cscmake_version)],
     )
 

@@ -97,7 +97,7 @@ and in [`pyproject.toml`](pyproject.toml) — keep the two aligned when bumping 
    - Performs a shallow (`depth=1`) self-checkout of this repository so release assembly runs on the runner.
 2. **Checkout Repositories**: for every repository configured in [`csfoundation_project.py`](csfoundation_project.py):
    - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0-rc1`) and unpacks it into `workspace/csCMake`, where the presets of the libraries find it (sibling layout).
-   - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `dev`).
+   - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `main`).
 3. **Install Requirements (Linux-Ubuntu)**:
    - Installs the OpenGL system packages required by the GUI libraries (`libgl1-mesa-dev`, `libopengl-dev`, `mesa-common-dev`) — only when `csVisOpenGL` is among the libraries being built.
 4. **Get Precompiled Libraries**:
