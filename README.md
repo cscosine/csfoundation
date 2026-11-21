@@ -1,73 +1,55 @@
 # csfoundation
 
+The base C++ libraries: core, Lie groups, cameras, OpenGL visualisation
+
 Automated cross-platform build system and CI pipeline recipe for the **base C++ libraries** (csCore, csLie, csCamera, csVisOpenGL) of the cscosine ecosystem, powered by [**csorchestrator**](https://github.com/cscosine/csorchestrator).
 
 ---
 
-## Getting Started
+<!-- cs-template:begin (this block is owned by cs-project-template: do not edit; the rest of the file is the project's) -->
+## Getting started
 
-### Prerequisites
-
-* Python `>= 3.11`
-* Git
-* [csorchestrator](https://github.com/cscosine/csorchestrator) cloned as a peer directory (`../csorchestrator`)
-
-### Environment Setup
-
-Bootstrap the local virtual environment, install dev dependencies, link `csorchestrator` in editable mode, and install git hooks:
-
-**Linux / macOS:**
-```bash
-./setup.sh
-source .venv/bin/activate
-```
-
-**Windows (PowerShell):**
-```powershell
-.\setup.ps1
-.\.venv\Scripts\Activate.ps1
-```
-
-### Running the Orchestrator Locally
-
-Execute the orchestrator script to run pipeline steps locally:
+Requires Python 3.11 or newer and Git.
 
 ```bash
-./csfoundation_project.py
-# or
+./setup.sh                    # Windows: .\setup.ps1
+source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
+```
+
+`setup.sh` creates `.venv`, installs the project with its development tools and csorchestrator, and installs the
+pre-commit hooks.
+
+csorchestrator: `setup.sh` installs the pinned version (v0.1.0-rc1). Another one:
+`./setup.sh --csorchestrator=<tag or branch>`; a local clone, editable: `./setup.sh --csorchestrator=../csorchestrator`
+(Windows: `.\setup.ps1 -CsOrchestrator <...>`).
+
+Run the recipe locally, regenerate the GitHub workflow after changing it:
+
+```bash
 python csfoundation_project.py
-```
-
-### Re-generating the GitHub Workflow
-
-To re-generate the GitHub Actions CI workflow (`.github/workflows/csfoundation.yml`) from the definition in [`csfoundation_project.py`](csfoundation_project.py):
-
-```bash
-./csfoundation_project.py generate-github-workflow
-# or
 python csfoundation_project.py generate-github-workflow
 ```
 
-### Development & Quality Checks
+Generated files, never edited by hand:
 
-Run linting, static type checking, and test suites:
+| Path | Made by | |
+|---|---|---|
+| `.github/workflows/csfoundation.yml` | `csfoundation_project.py generate-github-workflow` | Edit the recipe, then regenerate |
+| `csorchestratorsdk/` | csorchestrator, at the same command | The release-manifest helpers the CI runs, without installing csorchestrator |
+| `dependencies/` | csorchestrator, at the same command | The manifests and recipes of the releases this project builds on |
+| `workspace/` *(git-ignored)* | a local run of `csfoundation_project.py` | Sources, builds, installs, deploy archives; delete it to start clean |
+
+Checks and tests:
 
 ```bash
-# Code formatting and linting
-ruff check .
-ruff format .
-
-# Strict type checking
-python -m mypy . --config-file=pyproject.toml
-
-# Unit tests
-pytest
-
-# Run all pre-commit hooks
 pre-commit run --all-files
+pytest                        # --run-all: every test, as CI; --run=<marker>: an opt-in group (tests/conftest.py)
 ```
 
----
+The shared files (setup, checks, CI, agent rules) come from
+[cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
+branch: `copier update --defaults`.
+<!-- cs-template:end -->
 
 ## Overview
 
