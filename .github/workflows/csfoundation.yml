@@ -383,28 +383,28 @@ jobs:
       with:
         repository: cscosine/csCore.git
         path: workspace/csCore
-        ref: main
+        ref: feature/project-template
         fetch-depth: '1'
     - name: csLie Git clone/pull-ff
       uses: actions/checkout@v6
       with:
         repository: cscosine/csLie.git
         path: workspace/csLie
-        ref: main
+        ref: feature/project-template
         fetch-depth: '1'
     - name: csCamera Git clone/pull-ff
       uses: actions/checkout@v6
       with:
         repository: cscosine/csCamera.git
         path: workspace/csCamera
-        ref: main
+        ref: feature/project-template
         fetch-depth: '1'
     - name: csVisOpenGL Git clone/pull-ff
       uses: actions/checkout@v6
       with:
         repository: cscosine/csVisOpenGL.git
         path: workspace/csVisOpenGL
-        ref: main
+        ref: feature/project-template
         fetch-depth: '1'
     - name: Run command install the OpenMP runtime of clang
       run: |-
