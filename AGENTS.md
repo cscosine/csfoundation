@@ -30,3 +30,10 @@ there, then `copier update --defaults`; never edit its parts here):
 ## csfoundation
 
 The base C++ libraries: core, Lie groups, cameras, OpenGL visualisation
+
+- **The recipe**: [.claude/skills/csfoundation-orchestrator-recipe/SKILL.md](.claude/skills/csfoundation-orchestrator-recipe/SKILL.md).
+- **The skill for the projects using the libraries**: [agent-plugin/skills/csfoundation-libs/SKILL.md](agent-plugin/skills/csfoundation-libs/SKILL.md),
+  the Claude Code plugin `csfoundation` of the `cscosine` marketplace (`cscosine/.github`). A change of a library's
+  public API, packages or components, or of the release, updates it in the same PR (or, for a change in a library
+  repository, in the csfoundation PR that moves to it); its `version` in `agent-plugin/.claude-plugin/plugin.json`
+  follows the csfoundation version. Test it with `claude --plugin-dir agent-plugin`.

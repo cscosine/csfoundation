@@ -1,0 +1,7 @@
+{
+  "name": "csfoundation",
+  "description": "The cscosine base C++ libraries of csfoundation (csCore, csLie, csCamera, csVisOpenGL): which one for what, their CMake packages and components, how a project gets them.",
+  "version": "0.1.1",
+  "author": { "name": "cscosine" },
+  "repository": "https://github.com/cscosine/csfoundation"
+}
