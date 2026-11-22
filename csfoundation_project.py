@@ -68,7 +68,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
     o = create_default_orchestrator(
         name="csfoundation",
         # staggered weekly run (UTC), one project at a time in the build-train order (no shared runners)
-        schedule=Cron.weekly(DayOfWeek.MON, hour=1, minute=30),
+        schedule=Cron.weekly(DayOfWeek.MON, hour=3, minute=35),
         version="0.1.0",
         base_install_dir=base_install_dir,
         additional_files_list=[Path("csfoundation_config.py")],
