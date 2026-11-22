@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "csfoundation"
-version = "0.1.0"
+version = "0.1.1"
 description = "The base C++ libraries: core, Lie groups, cameras, OpenGL visualisation"
 authors = [
   { name = "cscosine-dev", email = "cscosine@gmail.com" }
