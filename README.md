@@ -53,7 +53,7 @@ branch: `copier update --defaults`.
 
 ## Overview
 
-Building the cscosine base C/C++ libraries from source across multiple platforms (Linux and Windows) and architectures (`x64` and `arm64`) can be complex and error-prone. **csfoundation** defines a declarative build and packaging recipe in Python using the `csorchestrator` framework.
+Building the cscosine base C/C++ libraries from source across multiple platforms (Linux, Windows and macOS) and architectures (`x64` and `arm64`) can be complex and error-prone. **csfoundation** defines a declarative build and packaging recipe in Python using the `csorchestrator` framework.
 
 With this setup:
 - The build pipeline, dependencies, and repository list are defined in Python code.
@@ -68,22 +68,21 @@ The core build recipe is defined in [`csfoundation_project.py`](csfoundation_pro
 
 ### Version Alignment
 
-The project version (`0.1.0`) is defined as `CSFOUNDATION_PROJECT_VERSION` in
-[`csfoundation/csorchestrator_config.py`](csfoundation/csorchestrator_config.py) (used by
-`create_default_orchestrator(version=...)` in [`csfoundation_project.py`](csfoundation_project.py))
-and in [`pyproject.toml`](pyproject.toml) — keep the two aligned when bumping the version.
+The project version is `create_default_orchestrator(version=...)` in
+[`csfoundation_project.py`](csfoundation_project.py) and `version` in [`pyproject.toml`](pyproject.toml): keep the two
+aligned when releasing.
 
 ### Execution Phases
 
 1. **Repos Self Checkout & Update**:
    - Performs a shallow (`depth=1`) self-checkout of this repository so release assembly runs on the runner.
 2. **Checkout Repositories**: for every repository configured in [`csfoundation_project.py`](csfoundation_project.py):
-   - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0-rc1`) and unpacks it into `workspace/csCMake`, where the presets of the libraries find it (sibling layout).
+   - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0`) and unpacks it into `workspace/csCMake`, where the presets of the libraries find it (sibling layout).
    - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `main`).
 3. **Install Requirements (Linux-Ubuntu)**:
    - Installs the OpenGL system packages required by the GUI libraries (`libgl1-mesa-dev`, `libopengl-dev`, `mesa-common-dev`) — only when `csVisOpenGL` is among the libraries being built.
 4. **Get Precompiled Libraries**:
-   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (per-release maps `THIRD_PARTY_LIBRARY_DEPENDENCIES` / `QT6_LIBRARY_DEPENDENCIES` in [`csfoundation/csorchestrator_config.py`](csfoundation/csorchestrator_config.py), composed over the first-party edges in `FIRST_PARTY_LIBRARY_DEPENDENCIES`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, pipes, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `workspace/libs/<variant>`.
+   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (the providers and the per-library `external_dependencies` / `external_dependencies_dev` in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py), composed over the first-party edges in `LIBRARY_DEPENDENCIES` / `LIBRARY_DEPENDENCIES_DEV`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, pipes, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `workspace/libs/<variant>`.
    - The full list of precompiled packages and their versions is in the [Dependencies](#dependencies) section.
    - Qt6 archives are mapped onto the build variants (Linux → GCC / Ninja, Windows → MSVC 2022 / Ninja).
 5. **Build each library**:
@@ -106,7 +105,7 @@ and in [`pyproject.toml`](pyproject.toml) — keep the two aligned when bumping 
 
 ### Dependencies
 
-`csfoundation` builds all **first-party** libraries (csCore, csLie, csCamera, csVisOpenGL) **from source** and consumes the following precompiled external dependencies (only the ones required by the libraries being built are downloaded; the per-library wiring is `THIRD_PARTY_LIBRARY_DEPENDENCIES` / `QT6_LIBRARY_DEPENDENCIES` in [`csfoundation/csorchestrator_config.py`](csfoundation/csorchestrator_config.py)):
+`csfoundation` builds all **first-party** libraries (csCore, csLie, csCamera, csVisOpenGL) **from source** and consumes the following precompiled external dependencies (only the ones required by the libraries being built are downloaded; the per-library wiring is in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py)):
 
 - **third_party_base_libs** — precompiled third-party libraries from its [GitHub release](https://github.com/cscosine/third_party_base_libs):
   - Catch2 (tests of csCore / csLie / csCamera)
@@ -160,7 +159,7 @@ graph TD
     end
 
     subgraph gui_system["Qt6 GUI toolkit & system packages"]
-        qt6["Qt6 v6.11.1 (csqt6 release v6.11.1)"]
+        qt6["Qt6 v6.12.0 (csqt6 release v6.12.0)"]
         opengl["OpenGL (Linux system packages)"]
     end
 
@@ -209,7 +208,7 @@ graph TD
 - **`magic_enum` and `tclap` are published in the `third_party_base_libs` release but not referenced by any `cs*` `CMakeLists.txt`** — they are standalone leaf libraries in the third_party_base_libs recipe and ship in its precompiled bundle, but they are **not downloaded** by this recipe since no first-party library requires them.
 - `cpptrace` is not linked directly by the `cs*` libraries — it is pulled in statically by `libassert` (see the third_party_base_libs README for the internal 3rd-party dependency graph).
 - Compiled vs header-only in this recipe: `csCore` and `csLie` are header-only (`INTERFACE` targets); `csCamera` and `csVisOpenGL` compile static libraries (`STATIC` targets).
-- The authoritative list of precompiled packages (third_party_base_libs + csqt6) and their versions is in the **[Dependencies](#dependencies)** section; how they are wired into the first-party builds is shown in the **[Library Dependency Graph](#library-dependency-graph)** below and mirrored in `THIRD_PARTY_LIBRARY_DEPENDENCIES` / `QT6_LIBRARY_DEPENDENCIES` in [`csfoundation/csorchestrator_config.py`](csfoundation/csorchestrator_config.py) (`THIRD_PARTY_TEST_LIBRARY_DEPENDENCIES` holds the test-only Catch2 entries used by CI), which the install helpers use to download only the managed libraries actually required by the libraries being built.
+- The authoritative list of precompiled packages (third_party_base_libs + csqt6) and their versions is in the **[Dependencies](#dependencies)** section; how they are wired into the first-party builds is shown in the **[Library Dependency Graph](#library-dependency-graph)** below and mirrored in `external_dependencies` of [`csfoundation_config.py`](csfoundation_config.py) (`external_dependencies_dev` holds the test-only Catch2 entries used by CI), which the install helpers use to download only the managed libraries actually required by the libraries being built.
 
 ---
 
@@ -218,7 +217,8 @@ graph TD
 ### Included Repositories
 
 The repositories built by this project are declared in the `repos` dictionary of
-[`csfoundation_project.py`](csfoundation_project.py):
+[`csfoundation_project.py`](csfoundation_project.py) (the full list and the first-party edges: `LIBRARY_LIST` /
+`LIBRARY_DEPENDENCIES` in [`csfoundation_config.py`](csfoundation_config.py)):
 
 * `csCore`, `csLie`, `csCamera`, `csVisOpenGL` — built with
   `BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID`
@@ -240,34 +240,26 @@ without installing the full `csorchestrator` package.
 
 ## Repository Structure
 
-The repository ships the build recipe plus the **precompiled dependency bundle sources and manifests**
-consumed by the pipeline (downloaded libs + their manifests):
-
 ```text
 csfoundation/
-├── csfoundation_project.py                                     # Main orchestrator recipe (entry point)
-├── csfoundation/
-│   └── csorchestrator_config.py                     # Installs Linux system requirements (apt packages)
-├── libs/                                             # Precompiled dependencies downloaded by the recipe
-│   ├── third_party_base_libs/                             # third_party_base_libs dependency bundle
-│   │   └── csorchestrator_config.py
-│   ├── csqt6/                                        # Qt6 GUI toolkit dependency bundle
-│   │   └── csorchestrator_config.py
-│   └── manifests/                                    # Resolved package manifests (authoritative versions)
-│       ├── third_party_base_libs-0.1.0.csOrchestratorManifest
-│       └── csqt6-6.11.1.csOrchestratorManifest
-├── tests/
-│   └── csfoundation/
-│       ├── test_csorchestrator_config.py
-│       └── test_placeholder.py
-├── csorchestratorsdk/portable/                       # [Autogenerated] vendored portable SDK from csorchestrator
+├── csfoundation_project.py                 # Main orchestrator recipe (entry point)
+├── csfoundation_config.py                  # Library list, first-party edges, system packages, precompiled providers
+├── dependencies/                           # [Autogenerated] manifests and recipes of the releases built on
+│   ├── third_party_base_libs-0.1.0.csOrchestratorManifest
+│   ├── third_party_base_libs_config.py
+│   ├── csqt6-6.12.0.csOrchestratorManifest
+│   └── csqt6_config.py                     # incl. qt6_mapping (Qt6 archives -> build variants)
+├── csorchestratorsdk/portable/             # [Autogenerated] vendored portable SDK from csorchestrator
+├── agent-plugin/                           # Claude plugin of the cscosine marketplace (skill csfoundation-libs)
 ├── .claude/skills/
-│   └── csfoundation-orchestrator-recipe/SKILL.md        # Agent skill for this repo's recipe
-├── .github/workflows/csfoundation.yml                  # Auto-generated CI workflow
-├── setup.sh / setup.ps1                              # venv bootstrap scripts
-├── open-code.sh / open-code.ps1                      # VS Code launcher scripts
-├── pyproject.toml                                    # Project metadata, ruff/mypy/pytest config
-└── .pre-commit-config.yaml                           # Pre-commit hooks
+│   └── csfoundation-orchestrator-recipe/SKILL.md   # Agent skill for this repo's recipe
+├── tests/
+│   └── csfoundation/test_placeholder.py
+├── .github/workflows/csfoundation.yml      # [Autogenerated] CI workflow
+├── setup.sh / setup.ps1                    # venv bootstrap scripts
+├── open-code.sh / open-code.ps1            # VS Code launcher scripts
+├── pyproject.toml                          # Project metadata, ruff/mypy/pytest config
+└── .pre-commit-config.yaml                 # Pre-commit hooks
 ```
 
 The **per-variant `.tar.gz` archives and release bundle** (`csfoundation-<version>-bundle.tar.gz`) are
