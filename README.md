@@ -82,7 +82,7 @@ aligned when releasing.
 3. **Install Requirements (Linux-Ubuntu)**:
    - Installs the OpenGL system packages required by the GUI libraries (`libgl1-mesa-dev`, `libopengl-dev`, `mesa-common-dev`) — only when `csVisOpenGL` is among the libraries being built.
 4. **Get Precompiled Libraries**:
-   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (the providers and the per-library `external_dependencies` / `external_dependencies_dev` in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py), composed over the first-party edges in `LIBRARY_DEPENDENCIES` / `LIBRARY_DEPENDENCIES_DEV`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, pipes, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `workspace/libs/<variant>`.
+   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (the providers and the per-library `external_dependencies` / `external_dependencies_dev` in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py), composed over the first-party edges in `LIBRARY_DEPENDENCIES` / `LIBRARY_DEPENDENCIES_DEV`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `workspace/libs/<variant>`.
    - The full list of precompiled packages and their versions is in the [Dependencies](#dependencies) section.
    - Qt6 archives are mapped onto the build variants (Linux → GCC / Ninja, Windows → MSVC 2022 / Ninja).
 5. **Build each library**:
@@ -115,7 +115,6 @@ aligned when releasing.
   - fmt-eigen
   - libassert
   - NamedType
-  - pipes
   - tl-expected
   - tl-optional
 - **Qt6** — precompiled GUI toolkit from [csqt6](https://github.com/cscosine/csqt6); required only by `csVisOpenGL`.
@@ -151,7 +150,6 @@ graph TD
         fmt_eigen["fmt-eigen"]
         libassert["libassert"]
         cpptrace["cpptrace"]
-        pipes["pipes"]
         tl_optional["tl-optional"]
         tl_expected["tl-expected"]
         namedtype["NamedType"]
@@ -180,7 +178,6 @@ graph TD
     csCore --> libassert
     csCore --> tl_optional
     csCore --> tl_expected
-    csCore --> pipes
     csCore --> namedtype
 
     csCore   -. "tests only" .-> catch2
@@ -197,7 +194,7 @@ graph TD
     first_party ~~~ precompiled ~~~ gui_system
 
     class csCore,csLie,csCamera,csVisOpenGL consumer;
-    class eigen3,fmt,fmt_eigen,libassert,cpptrace,catch2,namedtype,pipes,tl_optional,tl_expected leaf;
+    class eigen3,fmt,fmt_eigen,libassert,cpptrace,catch2,namedtype,tl_optional,tl_expected leaf;
 ```
 
 **Notes:**
