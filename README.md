@@ -19,7 +19,7 @@ source .venv/bin/activate     # Windows: .\.venv\Scripts\Activate.ps1
 `setup.sh` creates `.venv`, installs the project with its development tools and csorchestrator, and installs the
 pre-commit hooks.
 
-csorchestrator: `setup.sh` installs the pinned version (v0.1.0). Another one:
+csorchestrator: `setup.sh` installs the pinned version (v0.1.2). Another one:
 `./setup.sh --csorchestrator=<tag or branch>`; a local clone, editable: `./setup.sh --csorchestrator=../csorchestrator`
 (Windows: `.\setup.ps1 -CsOrchestrator <...>`).
 
@@ -37,7 +37,7 @@ Generated files, never edited by hand:
 | `.github/workflows/csfoundation.yml` | `csfoundation_project.py generate-github-workflow` | Edit the recipe, then regenerate |
 | `csorchestratorsdk/` | csorchestrator, at the same command | The release-manifest helpers the CI runs, without installing csorchestrator |
 | `dependencies/` | csorchestrator, at the same command | The manifests and recipes of the releases this project builds on |
-| `workspace/` *(git-ignored)* | a local run of `csfoundation_project.py` | Sources, builds, installs, deploy archives; delete it to start clean |
+| `_csw/` *(git-ignored)* | a local run of `csfoundation_project.py` | Sources, builds, installs, deploy archives; delete it to start clean |
 
 Checks and tests:
 
@@ -49,6 +49,41 @@ pytest                        # --run-all: every test, as CI; --run=<marker>: an
 The shared files (setup, checks, CI, agent rules) come from
 [cs-project-template](https://github.com/cscosine/cs-project-template); to bring them to its latest version, on a
 branch: `copier update --defaults`.
+
+## Working in VS Code
+
+`./open-code.sh [filter]` (Windows: `.\open-code.ps1 [filter]`) opens VS Code with the venv active. When the project has
+C++ sources of its own (a `CMakeLists.txt` and a `csCMakeProjectSetup.json`), it attaches the window to one of their
+builds, made by a local run of the recipe (`python csfoundation_project.py`); before the first build it opens a
+Python-only window. Without C++ sources it opens the folder.
+The filter is a part of the build folder name or of the compiler (`gcc`, `clang`, `msvc`, `clang-cl`),
+needed when there are several builds.
+
+The script writes a **workspace file** for the chosen build, `<build>/csfoundation.code-workspace`, and opens it
+(not the folder): it holds the build's settings (build folder, configurations, IntelliSense, debugger). The window title
+shows `csfoundation - <build>`. To come back: run the script again, or File > Open Recent and pick that
+workspace. Opening the folder itself (`code .`) gives a window without the build: CMake Tools would ask for a kit and
+configure a new build of its own. Each build has its own workspace file and window, so gcc and clang can be open side
+by side. The builds are found from the csCMake layout of `csCMakeProjectSetup.json`; CMake is the one that made the
+build (its path is in the build's `CMakeCache.txt`).
+
+Needs VS Code with its `code` command on the PATH (the Linux packages and the Windows installer add it; otherwise the
+script says which file to open by hand) and, on Linux, gdb to debug.
+
+The first time in a window (VS Code remembers it):
+
+1. CMake Tools asks "Select a kit": pick **`[Unspecified]`**, the build keeps its own compiler. CMake Tools then
+   configures (Output, CMake).
+2. Linux: clangd asks to install itself, or to disable the other IntelliSense: yes. Windows (Visual Studio builds):
+   nothing to do, IntelliSense comes from CMake Tools.
+
+Every day:
+
+- The configuration (those of the build) and Build (F7): the status bar.
+- Tests: the Testing view (Catch2: one entry per test case), run or debug one.
+- The launch target (status bar): Run and Debug, "Debug the launch target" (F5, it builds first); with Catch2 also
+  "Debug the launch target (Catch2 test spec)" (a test name or a `[tag]`).
+- Install (for the next libraries, the deployments): command palette, "CMake: Install".
 <!-- cs-template:end -->
 
 ## Overview
@@ -77,16 +112,16 @@ aligned when releasing.
 1. **Repos Self Checkout & Update**:
    - Performs a shallow (`depth=1`) self-checkout of this repository so release assembly runs on the runner.
 2. **Checkout Repositories**: for every repository configured in [`csfoundation_project.py`](csfoundation_project.py):
-   - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0`) and unpacks it into `workspace/csCMake`, where the presets of the libraries find it (sibling layout).
-   - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `workspace/<repo>` at the configured ref (usually `main`).
+   - Downloads the csCMake release package pinned in [`csfoundation_project.py`](csfoundation_project.py) (`cscmake_version`, e.g. `1.0.0`) and unpacks it into `_csw/csCMake`, where the presets of the libraries find it (sibling layout).
+   - Clones or pulls the repositories (`csCore`, `csLie`, `csCamera`, `csVisOpenGL`) into `_csw/<repo>` at the configured ref (usually `main`).
 3. **Install Requirements (Linux-Ubuntu)**:
    - Installs the OpenGL system packages required by the GUI libraries (`libgl1-mesa-dev`, `libopengl-dev`, `mesa-common-dev`) — only when `csVisOpenGL` is among the libraries being built.
 4. **Get Precompiled Libraries**:
-   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (the providers and the per-library `external_dependencies` / `external_dependencies_dev` in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py), composed over the first-party edges in `LIBRARY_DEPENDENCIES` / `LIBRARY_DEPENDENCIES_DEV`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `workspace/libs/<variant>`.
+   - Resolves, transitively and cross-repo, the managed libraries required by the libraries being built (the providers and the per-library `external_dependencies` / `external_dependencies_dev` in `install_csfoundation_build_dependencies` of [`csfoundation_config.py`](csfoundation_config.py), composed over the first-party edges in `LIBRARY_DEPENDENCIES` / `LIBRARY_DEPENDENCIES_DEV`) and downloads only those: the **precompiled third-party libraries** (Catch2, cpptrace, eigen3, fmt, fmt-eigen, libassert, NamedType, tl-expected, tl-optional) from the [`third_party_base_libs`](https://github.com/cscosine/third_party_base_libs) release and the **Qt6 GUI toolkit** (only when `csVisOpenGL` is built) from the [`csqt6`](https://github.com/cscosine/csqt6) release into `_csw/libs/<variant>`.
    - The full list of precompiled packages and their versions is in the [Dependencies](#dependencies) section.
    - Qt6 archives are mapped onto the build variants (Linux → GCC / Ninja, Windows → MSVC 2022 / Ninja).
 5. **Build each library**:
-   - Configures, builds, and installs each repository into `workspace/install/<variant>/<repo>` using the per-repository `BuildConfig` (e.g. `DEBUG_RELEASE_RELWITHDEBINFO_PARANOID`).
+   - Configures, builds, and installs each repository into `_csw/install/<variant>/<repo>` using the per-repository `BuildConfig` (e.g. `DEBUG_RELEASE_RELWITHDEBINFO_PARANOID`).
 6. **Get Versions**:
    - Reads each installed library's package version (CMakeConfig package) and writes a per-variant `.csOrchestratorManifest`.
 7. **Create Archives**:
@@ -199,7 +234,7 @@ graph TD
 
 **Notes:**
 
-- **`csCMake` is intentionally not in the graph**: it is build *tooling* used by every `csCMake`-based repo at **configure time** via `include(csCMake)` (e.g. [`workspace/csCore/CMakeLists.txt`](workspace/csCore/CMakeLists.txt#L5)) — it is the release package unpacked in `workspace/csCMake`, not built, and it is not a runtime / install-time dependency of any installed library.
+- **`csCMake` is intentionally not in the graph**: it is build *tooling* used by every `csCMake`-based repo at **configure time** via `include(csCMake)` (e.g. [`_csw/csCore/CMakeLists.txt`](_csw/csCore/CMakeLists.txt#L5)) — it is the release package unpacked in `_csw/csCMake`, not built, and it is not a runtime / install-time dependency of any installed library.
 - **csCore is a *solution* repo**: the first-party libraries consume its components rather than the umbrella target — `csLie`, `csCamera`, and `csVisOpenGL` all link `csCore::core` + `csCore::eigenUtils` (csLie tests additionally use `csCore::math` + `csCore::testUtils`).
 - **Qt6 is consumed only by `csVisOpenGL`** (`Core`, `Gui`, `OpenGL`, `Widgets`, `OpenGLWidgets`); the raw `OpenGL` dependency is satisfied by Linux system packages on the Ubuntu runners.
 - **`magic_enum` and `tclap` are published in the `third_party_base_libs` release but not referenced by any `cs*` `CMakeLists.txt`** — they are standalone leaf libraries in the third_party_base_libs recipe and ship in its precompiled bundle, but they are **not downloaded** by this recipe since no first-party library requires them.

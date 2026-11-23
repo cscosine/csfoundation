@@ -59,7 +59,7 @@ them: in `<name>_config.py`, a `ManifestGithub(org="cscosine", git_repo="csfound
 project_name="csfoundation", project_version="0.1.0", release_tag="v0.1.0")` and the libraries each target needs,
 e.g. `{"csfoundation": {"myApp": ["csCore", "csVisOpenGL"]}}`; csfoundation's own providers (third_party_base_libs,
 csqt6 for csVisOpenGL) come with it. Then `./<name>_project.py generate-github-workflow`. See the
-`csorchestrator-usage` skill of the `csorchestrator` plugin. The packages land in `workspace/libs/<variant>`, which
+`csorchestrator-usage` skill of the `csorchestrator` plugin. The packages land in `_csw/libs/<variant>`, which
 the csCMake presets put in `CMAKE_PREFIX_PATH`.
 
 Release versions: the [csfoundation releases](https://github.com/cscosine/csfoundation/releases) (each library also
