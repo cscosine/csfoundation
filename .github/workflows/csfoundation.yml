@@ -390,7 +390,7 @@ jobs:
       with:
         repository: cscosine/csLie.git
         path: _csw/csLie
-        ref: main
+        ref: feature/cslie-accuracy
         fetch-depth: '1'
     - name: csCamera Git clone/pull-ff
       uses: actions/checkout@v6

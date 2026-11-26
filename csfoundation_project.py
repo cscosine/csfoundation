@@ -51,7 +51,7 @@ def create_orchestrator() -> OptionalOrchestratorWithReport:
 
     repos: RepoRefBuildPublishConfigDict = {
         "csCore": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
-        "csLie": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
+        "csLie": RepoRefBuildPublishConfig("feature/cslie-accuracy", BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
         "csCamera": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
         "csVisOpenGL": RepoRefBuildPublishConfig(common_repo_ref, BuildConfig.DEBUG_RELEASE_RELWITHDEBINFO_PARANOID),
     }
